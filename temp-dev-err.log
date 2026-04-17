@@ -1,0 +1,2123 @@
+⨯ Error: Unknown column 'vs.main_dep' in 'field list'
+    at getHosPatientDetail (src\lib\data-service.ts:1295:36)
+    at async GET (src\app\api\hosxp\patient\route.ts:13:18)
+  1293 |   }
+  1294 |
+> 1295 |   const [serviceRows] = await pool.query(
+       |                                    ^
+  1296 |     `
+  1297 |       SELECT
+  1298 |         o.vstdate AS visitDate, {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: '\n' +
+    '      SELECT\n' +
+    '        o.vstdate AS visitDate,\n' +
+    '        o.vn,\n' +
+    "        COALESCE(vs.pttype, '') AS pttype,\n" +
+    "        COALESCE(vs.main_dep, '') AS mainDep,\n" +
+    "        COALESCE(vs.pdx, '') AS pdx,\n" +
+    "        COALESCE(i.name, '') AS pdxName\n" +
+    '      FROM ovst o\n' +
+    '      LEFT JOIN vn_stat vs ON vs.vn = o.vn\n' +
+    '      LEFT JOIN icd101 i\n' +
+    '        ON i.code = vs.pdx\n' +
+    "        OR i.code = UPPER(REPLACE(vs.pdx, '.', ''))\n" +
+    "      WHERE o.hn = '000016048'\n" +
+    '      ORDER BY o.vstdate DESC, o.vn DESC\n' +
+    '      LIMIT 80\n' +
+    '    ',
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'vs.main_dep' in 'field list'"
+}
+⨯ Error: Unknown column 'vs.main_dep' in 'field list'
+    at getHosPatientDetail (src\lib\data-service.ts:1295:36)
+    at async GET (src\app\api\hosxp\patient\route.ts:13:18)
+  1293 |   }
+  1294 |
+> 1295 |   const [serviceRows] = await pool.query(
+       |                                    ^
+  1296 |     `
+  1297 |       SELECT
+  1298 |         o.vstdate AS visitDate, {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: '\n' +
+    '      SELECT\n' +
+    '        o.vstdate AS visitDate,\n' +
+    '        o.vn,\n' +
+    "        COALESCE(vs.pttype, '') AS pttype,\n" +
+    "        COALESCE(vs.main_dep, '') AS mainDep,\n" +
+    "        COALESCE(vs.pdx, '') AS pdx,\n" +
+    "        COALESCE(i.name, '') AS pdxName\n" +
+    '      FROM ovst o\n' +
+    '      LEFT JOIN vn_stat vs ON vs.vn = o.vn\n' +
+    '      LEFT JOIN icd101 i\n' +
+    '        ON i.code = vs.pdx\n' +
+    "        OR i.code = UPPER(REPLACE(vs.pdx, '.', ''))\n" +
+    "      WHERE o.hn = '000016048'\n" +
+    '      ORDER BY o.vstdate DESC, o.vn DESC\n' +
+    '      LIMIT 80\n' +
+    '    ',
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'vs.main_dep' in 'field list'"
+}
+⨯ Error: Unknown column 'vs.main_dep' in 'field list'
+    at getHosPatientDetail (src\lib\data-service.ts:1280:10)
+    at async GET (src\app\api\hosxp\patient\route.ts:13:18)
+  1278 |       }
+  1279 |     })(),
+> 1280 |     pool.query(
+       |          ^
+  1281 |       `
+  1282 |         SELECT
+  1283 |           o.vstdate AS visitDate, {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: '\n' +
+    '        SELECT\n' +
+    '          o.vstdate AS visitDate,\n' +
+    '          o.vn,\n' +
+    "          COALESCE(vs.pttype, '') AS pttype,\n" +
+    "          COALESCE(vs.main_dep, '') AS mainDep,\n" +
+    "          COALESCE(vs.pdx, '') AS pdx,\n" +
+    "          COALESCE(i.name, '') AS pdxName\n" +
+    '        FROM ovst o\n' +
+    '        LEFT JOIN vn_stat vs ON vs.vn = o.vn\n' +
+    '        LEFT JOIN icd101 i\n' +
+    '          ON i.code = vs.pdx\n' +
+    "          OR i.code = UPPER(REPLACE(vs.pdx, '.', ''))\n" +
+    "        WHERE o.hn = '000016048'\n" +
+    '        ORDER BY o.vstdate DESC, o.vn DESC\n' +
+    '        LIMIT 50\n' +
+    '      ',
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'vs.main_dep' in 'field list'"
+}
+⨯ Error: Unknown column 'vs.main_dep' in 'field list'
+    at getHosPatientDetail (src\lib\data-service.ts:1280:10)
+    at async GET (src\app\api\hosxp\patient\route.ts:13:18)
+  1278 |       }
+  1279 |     })(),
+> 1280 |     pool.query(
+       |          ^
+  1281 |       `
+  1282 |         SELECT
+  1283 |           o.vstdate AS visitDate, {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: '\n' +
+    '        SELECT\n' +
+    '          o.vstdate AS visitDate,\n' +
+    '          o.vn,\n' +
+    "          COALESCE(vs.pttype, '') AS pttype,\n" +
+    "          COALESCE(vs.main_dep, '') AS mainDep,\n" +
+    "          COALESCE(vs.pdx, '') AS pdx,\n" +
+    "          COALESCE(i.name, '') AS pdxName\n" +
+    '        FROM ovst o\n' +
+    '        LEFT JOIN vn_stat vs ON vs.vn = o.vn\n' +
+    '        LEFT JOIN icd101 i\n' +
+    '          ON i.code = vs.pdx\n' +
+    "          OR i.code = UPPER(REPLACE(vs.pdx, '.', ''))\n" +
+    "        WHERE o.hn = '000016048'\n" +
+    '        ORDER BY o.vstdate DESC, o.vn DESC\n' +
+    '        LIMIT 50\n' +
+    '      ',
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'vs.main_dep' in 'field list'"
+}
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'registerUnitId' has already been declared
+    at eval (<anonymous>)
+⨯ ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+[0m [90m 309 |[39m   [36mconst[39m [registerPassword[33m,[39m setRegisterPassword] [33m=[39m useState([32m""[39m)[33m;[39m
+ [90m 310 |[39m   [36mconst[39m [registerRole[33m,[39m setRegisterRole] [33m=[39m useState[33m<[39m[33mUserRole[39m[33m>[39m([32m"unit_nurse"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 311 |[39m   [36mconst[39m [registerUnitId[33m,[39m setRegisterUnitId] [33m=[39m useState(
+ [90m     |[39m          [31m[1m^[22m[39m
+ [90m 312 |[39m     initialSnapshot[33m.[39munits[33m.[39mfind((unit) [33m=>[39m unit[33m.[39mkind [33m!==[39m [32m"hospital"[39m)[33m?[39m[33m.[39mid [33m?[39m[33m?[39m [32m""[39m[33m,[39m
+ [90m 313 |[39m   )[33m;[39m
+ [90m 314 |[39m   [36mconst[39m [pendingRequests[33m,[39m setPendingRequests] [33m=[39m useState[33m<[39m[33mPendingUserRequest[39m[][33m>[39m([])[33m;[39m[0m
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:10
+the name `registerUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m          [31m[1m^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+
+./src/components/palliative-workspace.tsx:311:26
+the name `setRegisterUnitId` is defined multiple times
+  [90m309 |[0m   [36mconst[0m [registerPassword, setRegisterPassword] = useState([32m""[0m);
+  [90m310 |[0m   [36mconst[0m [registerRole, setRegisterRole] = useState<[33mUserRole[0m>([32m"unit_nurse"[0m);
+[31m[1m>[0m [90m311 |[0m   [36mconst[0m [registerUnitId, setRegisterUnitId] = useState(
+  [90m    |[0m                          [31m[1m^^^^^^^^^^^^^^^^^[0m
+  [90m312 |[0m     initialSnapshot.units.find((unit) => unit.kind !== [32m"hospital"[0m)?.id ?? [32m""[0m,
+  [90m313 |[0m   );
+  [90m314 |[0m   [36mconst[0m [pendingRequests, setPendingRequests] = useState<[33mPendingUserRequest[0m[]>([]);
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/palliative-workspace.tsx
+Error evaluating Node.js code
+SyntaxError: D:\palliativecare\src\components\palliative-workspace.tsx: Identifier 'registerUnitId' has already been declared. (311:9)
+
+  309 |   const [registerPassword, setRegisterPassword] = useState("");
+  310 |   const [registerRole, setRegisterRole] = useState<UserRole>("unit_nurse");
+> 311 |   const [registerUnitId, setRegisterUnitId] = useState(
+      |          ^
+  312 |     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+  313 |   );
+  314 |   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
+  (from D:\palliativecare\node_modules\next\dist\build\babel\loader\index.js)
+    [at constructor (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:137105)]
+    [at TypeScriptParserMixin.raise (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:194164)]
+    [at TypeScriptScopeHandler.checkRedeclarationInScope (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:163166)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:162529)]
+    [at TypeScriptScopeHandler.declareName (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:271160)]
+    [at TypeScriptParserMixin.declareNameFromIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279226)]
+    [at TypeScriptParserMixin.checkIdentifier (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:279152)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278197)]
+    [at TypeScriptParserMixin.checkLVal (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:278727)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:403644)]
+    [at TypeScriptParserMixin.parseVarId (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:329902)]
+    [at TypeScriptParserMixin.parseVar (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:402884)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:399366)]
+    [at TypeScriptParserMixin.parseVarStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:323322)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391398)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401423)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseBlock (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:400923)]
+    [at TypeScriptParserMixin.parseFunctionBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:378053)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:377675)]
+    [at TypeScriptParserMixin.parseFunctionBodyAndFinish (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:318173)]
+    [at D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404308]
+    [at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:383677)]
+    [at TypeScriptParserMixin.parseFunction (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:404262)]
+    [at TypeScriptParserMixin.parseFunctionStatement (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:397088)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:390089)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseStatementListItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389120)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:415606)]
+    [at TypeScriptParserMixin.parseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:327104)]
+    [at TypeScriptParserMixin.maybeParseExportDeclaration (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:414570)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:412708)]
+    [at TypeScriptParserMixin.parseExport (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:322862)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:391808)]
+    [at TypeScriptParserMixin.parseStatementContent (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:324042)]
+    [at TypeScriptParserMixin.parseStatementLike (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389494)]
+    [at TypeScriptParserMixin.parseModuleItem (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:389055)]
+    [at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401400)]
+    [at TypeScriptParserMixin.parseBlockBody (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:401223)]
+    [at TypeScriptParserMixin.parseProgram (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386857)]
+    [at TypeScriptParserMixin.parseTopLevel (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:386575)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:426834)]
+    [at TypeScriptParserMixin.parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:337631)]
+    [at parse (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:191:427092)]
+    [at parser (D:\palliativecare\node_modules\next\dist\compiled\babel\bundle.js:1:142456)]
+    [at <anonymous>]
+
+Import trace:
+  Server Component:
+    ./src/components/palliative-workspace.tsx
+    ./src/app/page.tsx
+
+
+⨯ Error: บัญชียังไม่ผ่านการอนุมัติใช้งาน
+    at loginAppUser (src\lib\data-service.ts:2042:11)
+    at async POST (src\app\api\auth\login\route.ts:8:18)
+  2040 |   }
+  2041 |   if (!Boolean(row.active) || row.approvalStatus !== "approved") {
+> 2042 |     throw new Error("บัญชียังไม่ผ่านการอนุมัติใช้งาน");
+       |           ^
+  2043 |   }
+  2044 |   const token = issueAuthToken(row.id);
+  2045 |   await pool.query(
+[browser] Uncaught Error: Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <InnerLayoutRouter url="/case-mana..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+      <SegmentViewNode type="page" pagePath="case-manag...">
+        <SegmentTrieNode>
+        <CaseManagerCompletedPage>
+          <CaseManagerRegistryWorkspace initialSnapshot={{...}} defaultStatusFilter="completed">
+            <main className="mx-auto fl...">
+              <header>
+              <section>
+              <section className="rounded-[1...">
+                <div className="grid gap-6...">
+                  <div>
+                    <div>
+                    <div className="overflow-h...">
+                      <div className="overflow-x...">
+                        <table className="min-w-full...">
+                          <thead>
+                          <tbody>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr>
+                            <tr className="cursor-poi..." onClick={function onClick}>
+                              <td className="px-4 py-4">
+                                <div className="font-medium text-[#123047]">
++                                 นางรัตนา  วงศ์ศรียา
+-                                 นางรัตนาพร  พรพึ่ง
+                                ...
+                              ...
+                            ...
+                  ...
+              ...
+      ...
+
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at div (<anonymous>)
+    at <unknown> (file://D:/palliativecare/.next/dev/static/chunks/src_0c_0830._.js:1255:275)
+    at Array.map (<anonymous>)
+    at CaseManagerRegistryWorkspace (file://D:/palliativecare/.next/dev/static/chunks/src_0c_0830._.js:1248:90)
+    at CaseManagerCompletedPage (src\app\case-manager\completed\page.tsx:7:5)
+   5 |   const snapshot = await getAppSnapshot();
+   6 |   return (
+>  7 |     <CaseManagerRegistryWorkspace
+     |     ^
+   8 |       initialSnapshot={snapshot}
+   9 |       defaultStatusFilter="completed"
+  10 |     />
+⨯ Error: read ECONNRESET
+    at ensureAuthSchema (src\lib\data-service.ts:308:35)
+    at getSessionUserFromToken (src\lib\data-service.ts:2456:9)
+    at GET (src\app\api\auth\me\route.ts:12:45)
+  306 |   if (!isDbConfigured("palliative")) return;
+  307 |   const pool = getPool("palliative");
+> 308 |   const [columnsRaw] = await pool.query(`
+      |                                   ^
+  309 |     SELECT COLUMN_NAME
+  310 |     FROM INFORMATION_SCHEMA.COLUMNS
+  311 |     WHERE TABLE_SCHEMA = DATABASE() {
+  code: 'ECONNRESET',
+  errno: -4077,
+  sql: undefined,
+  sqlState: undefined,
+  sqlMessage: undefined
+}
+⨯ Error: read ECONNRESET
+    at buildSummaryFromRegistry (src\lib\data-service.ts:1337:31)
+    at getHosProgressSummary (src\lib\data-service.ts:1380:12)
+    at GET (src\app\api\candidates\progress\route.ts:15:46)
+  1335 |             clinicShortName,
+  1336 |           ];
+> 1337 |     const [rows] = await pool.query(
+       |                               ^
+  1338 |       `
+  1339 |         SELECT
+  1340 |           SUM( {
+  code: 'ECONNRESET',
+  errno: -4077,
+  sql: undefined,
+  sqlState: undefined,
+  sqlMessage: undefined
+}
+[browser] ⨯ unhandledRejection: Error: 
+    at requestJson (file://D:/palliativecare/.next/dev/static/chunks/src_0sn51vw._.js:617:29)
