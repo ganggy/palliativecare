@@ -4,6 +4,15 @@
   --background: #eef5f7;
   --foreground: #123047;
   --muted: #6f8190;
+  --panel: rgba(255, 255, 255, 0.88);
+  --panel-strong: #ffffff;
+  --line: #dbe8ef;
+  --brand: #0f766e;
+  --brand-deep: #123047;
+  --warning: #a16207;
+  --danger: #b42345;
+  --shadow-soft: 0 22px 60px rgba(8, 33, 51, 0.09);
+  --shadow-lift: 0 28px 75px rgba(8, 33, 51, 0.14);
 }
 
 @theme inline {
@@ -27,9 +36,11 @@ body {
   color: var(--foreground);
   font-family: var(--font-thai-sans), system-ui, sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(107, 226, 211, 0.12), transparent 28%),
-    radial-gradient(circle at 80% 10%, rgba(243, 189, 106, 0.1), transparent 22%),
-    linear-gradient(180deg, #f6fbfd 0%, #eef5f7 45%, #e6f0f4 100%);
+    radial-gradient(circle at 12% 6%, rgba(61, 185, 169, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(234, 179, 8, 0.12), transparent 22%),
+    radial-gradient(circle at 50% 92%, rgba(56, 189, 248, 0.1), transparent 26%),
+    linear-gradient(180deg, #f8fcfd 0%, #eef6f8 44%, #e7f0ee 100%);
+  text-rendering: geometricPrecision;
 }
 
 ::selection {
@@ -45,6 +56,113 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:not(:disabled):hover,
+a:hover {
+  transform: translateY(-1px);
+}
+
+button:not(:disabled):active,
+a:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  min-height: 42px;
+  background-color: rgba(255, 255, 255, 0.94);
+  color: var(--foreground);
+  box-shadow: 0 1px 0 rgba(18, 48, 71, 0.02);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8aa0af;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(15, 118, 110, 0.48) !important;
+  background-color: #ffffff;
+  box-shadow:
+    0 0 0 4px rgba(15, 118, 110, 0.11),
+    0 10px 24px rgba(8, 33, 51, 0.06);
+}
+
+:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, 0.24);
+  outline-offset: 3px;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+}
+
+tbody tr {
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+tbody tr:hover {
+  background-color: rgba(232, 247, 247, 0.68);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(219, 232, 239, 0.55);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid rgba(219, 232, 239, 0.55);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #7fb8c6, #3c7d8d);
 }
 
 textarea {

@@ -1,0 +1,7 @@
+import { PalliativeWorkspace } from "@/components/palliative-workspace";
+import { getAppSnapshot } from "@/lib/data-service";
+
+export default async function UnitOverviewPage() {
+  const snapshot = await getAppSnapshot();
+  return <PalliativeWorkspace initialSnapshot={snapshot} preferredRole="unit_manager" />;
+}

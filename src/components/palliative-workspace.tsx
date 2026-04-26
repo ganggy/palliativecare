@@ -9,14 +9,16 @@ import type {
   AppSnapshot,
   AuthSessionUser,
   CandidateFilterMode,
+  CandidateVisitHistory,
   CommentAudience,
   HosCandidate,
   PendingUserRequest,
   PalliativePatient,
+  PalliativeVisit,
   UserRole,
   VisitChecklist,
 } from "@/lib/types";
-import { formatRoleLabel, REQUIRED_COMPLETE_VISITS } from "@/lib/rules";
+import { formatRoleLabel, monthKey, REQUIRED_COMPLETE_VISITS } from "@/lib/rules";
 
 const defaultVisitChecklistState: VisitChecklist = {
   symptomAssessment: true,
@@ -48,6 +50,10 @@ type ImportFileOption = {
   modifiedAt: string;
 };
 
+type NurseWorkspaceTab = "search" | "registry" | "visit" | "progress";
+
+type VisitPhotoCategory = "patient-card" | "follow-up";
+
 function formatDate(value?: string) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("th-TH", {
@@ -72,6 +78,19 @@ function shortDate(value?: string) {
     day: "2-digit",
     month: "short",
   }).format(new Date(`${value}T00:00:00`));
+}
+
+function buildPageList(currentPage: number, totalPages: number): number[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+  const start = Math.max(1, currentPage - 2);
+  const end = Math.min(totalPages, start + 4);
+  const adjustedStart = Math.max(1, end - 4);
+  return Array.from(
+    { length: end - adjustedStart + 1 },
+    (_, index) => adjustedStart + index,
+  );
 }
 
 function formatDateTime(value?: string) {
@@ -141,6 +160,26 @@ function formatMoney(value: number) {
   return `${value.toLocaleString()} บาท`;
 }
 
+function getFiscalYearStart(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  const year = date.getMonth() >= 9 ? date.getFullYear() : date.getFullYear() - 1;
+  return `${year}-10-01`;
+}
+
+function getPhotoCategoryLabel(category: VisitPhotoCategory) {
+  if (category === "patient-card") return "รูปบัตรคู่กับคนไข้";
+  return "รูปติดตามอาการคนไข้";
+}
+
+function splitVisitPhotos(photos: PalliativeVisit["photos"]) {
+  return {
+    patientCardPhotos: photos.filter((photo) => photo.caption === "patient-card"),
+    followUpPhotos: photos.filter(
+      (photo) => photo.caption === "follow-up" || !photo.caption,
+    ),
+  };
+}
+
 function candidateModeLabel(mode: CandidateFilterMode) {
   if (mode === "missing_both_z")
     return "ยังไม่เคยลงทั้ง Z51.5 และ Z71.8";
@@ -202,6 +241,14 @@ async function filesToPayload(files: FileList | null) {
   );
 }
 
+async function filesToPayloadWithCaption(
+  files: FileList | null,
+  caption: VisitPhotoCategory,
+) {
+  const payload = await filesToPayload(files);
+  return payload.map((item) => ({ ...item, caption }));
+}
+
 function parseStmText(text: string, fallbackClaimMonth: string) {
   return text
     .split(/\r?\n/)
@@ -244,11 +291,16 @@ function Box({
 
 export function PalliativeWorkspace({
   initialSnapshot,
+  preferredRole,
 }: {
   initialSnapshot: AppSnapshot;
+  preferredRole?: UserRole;
 }) {
   const router = useRouter();
-  const initialUser = initialSnapshot.users[1] ?? initialSnapshot.users[0];
+  const initialUser =
+    initialSnapshot.users.find((user) => user.role === preferredRole) ??
+    initialSnapshot.users[1] ??
+    initialSnapshot.users[0];
   const initialPatient = initialSnapshot.patients[0];
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [activeUserId, setActiveUserId] = useState(initialUser?.id ?? "");
@@ -298,8 +350,11 @@ export function PalliativeWorkspace({
   const [visitChecklist, setVisitChecklist] = useState<VisitChecklist>(
     defaultVisitChecklistState,
   );
-  const [visitFiles, setVisitFiles] = useState<FileList | null>(null);
-  const [visitFileInputKey, setVisitFileInputKey] = useState(0);
+  const [selectedPatientVisitHistory, setSelectedPatientVisitHistory] = useState<
+    CandidateVisitHistory[]
+  >([]);
+  const [selectedPatientVisitHistoryLoading, setSelectedPatientVisitHistoryLoading] =
+    useState(false);
   const [stmText, setStmText] = useState("");
   const [stmPercent, setStmPercent] = useState(50);
   const [stmFileName, setStmFileName] = useState("REP_STM_import.csv");
@@ -336,6 +391,9 @@ export function PalliativeWorkspace({
     return nextSnapshot;
   };
   const currentUser =
+    (preferredRole
+      ? snapshot.users.find((user) => user.role === preferredRole)
+      : null) ??
     snapshot.users.find((user) => user.id === (sessionUser?.id ?? activeUserId)) ??
     snapshot.users.find((user) => user.id === activeUserId) ??
     snapshot.users[0];
@@ -343,6 +401,22 @@ export function PalliativeWorkspace({
     currentUser?.role === "hospital_admin" ||
     currentUser?.role === "hospital_case_manager";
   const isCaseManager = currentUser?.role === "hospital_case_manager";
+  const isUnitNurse = currentUser?.role === "unit_nurse";
+  const isUnitManager = currentUser?.role === "unit_manager";
+  const [nurseTab, setNurseTab] = useState<NurseWorkspaceTab>("search");
+  const [nurseRegistryMode, setNurseRegistryMode] =
+    useState<"tracking" | "completed">("tracking");
+  const [unitManagerRegistryMode, setUnitManagerRegistryMode] =
+    useState<"tracking" | "completed">("tracking");
+  const [nurseSearch, setNurseSearch] = useState("");
+  const [nursePatientPage, setNursePatientPage] = useState(1);
+  const [registrySearch, setRegistrySearch] = useState("");
+  const [registryPage, setRegistryPage] = useState(1);
+  const [pendingNursePatientId, setPendingNursePatientId] = useState<number | null>(null);
+  const [patientCardFiles, setPatientCardFiles] = useState<FileList | null>(null);
+  const [patientCardFileInputKey, setPatientCardFileInputKey] = useState(0);
+  const [followUpFiles, setFollowUpFiles] = useState<FileList | null>(null);
+  const [followUpFileInputKey, setFollowUpFileInputKey] = useState(0);
   const visiblePatients = useMemo(
     () =>
       isHospitalBoard
@@ -351,6 +425,26 @@ export function PalliativeWorkspace({
             (patient) => patient.assignedUnitId === currentUser?.unitId,
           ),
     [currentUser?.unitId, isHospitalBoard, snapshot.patients],
+  );
+  const nursePatients = useMemo(() => {
+    if (!isUnitNurse) return visiblePatients;
+    const keyword = nurseSearch.trim().toLowerCase();
+    if (!keyword) return visiblePatients;
+    return visiblePatients.filter((patient) => {
+      const haystack =
+        `${patient.hn} ${patient.cid} ${patient.fullName} ${patient.primaryDxCode} ${patient.assignedUnitName}`.toLowerCase();
+      return haystack.includes(keyword);
+    });
+  }, [isUnitNurse, nurseSearch, visiblePatients]);
+  const nursePatientsPerPage = 5;
+  const nursePatientsPageCount = Math.max(
+    1,
+    Math.ceil(nursePatients.length / nursePatientsPerPage),
+  );
+  const nursePatientsPage = Math.min(nursePatientPage, nursePatientsPageCount);
+  const nursePatientsPageItems = nursePatients.slice(
+    (nursePatientsPage - 1) * nursePatientsPerPage,
+    nursePatientsPage * nursePatientsPerPage,
   );
   const selectedPatient =
     visiblePatients.find((patient) => patient.id === selectedPatientId) ??
@@ -376,6 +470,97 @@ export function PalliativeWorkspace({
     .filter((patient) => patient.claimChecklist.readyForClaim)
     .slice(0, 6);
   const latestStm = snapshot.stmBatches[0];
+  const pendingNursePatient = visiblePatients.find(
+    (patient) => patient.id === pendingNursePatientId,
+  );
+  const selectedUnit = snapshot.units.find(
+    (unit) => unit.id === selectedPatient?.assignedUnitId,
+  );
+  const currentUnitSummary = visibleUnits[0];
+  const currentUnitId = currentUser?.unitId;
+  const fiscalYearStart = getFiscalYearStart(snapshot.currentDate);
+  const currentUnitVisitPatients = currentUnitId
+    ? snapshot.patients.filter(
+        (patient) =>
+          patient.assignedUnitId === currentUnitId &&
+          patient.careStatus !== "cancelled" &&
+          patient.careStatus !== "deceased",
+      )
+    : [];
+  const currentUnitRemainingCount = currentUnitVisitPatients.filter(
+    (patient) => patient.careStatus !== "completed",
+  ).length;
+  const currentUnitCompletedCount = currentUnitVisitPatients.filter(
+    (patient) => patient.careStatus === "completed",
+  ).length;
+  const currentUnitVisitTodayCount = currentUnitId
+    ? snapshot.visits.filter((visit) => {
+        const patient = snapshot.patients.find(
+          (row) => row.id === visit.patientId,
+        );
+        return (
+          patient?.assignedUnitId === currentUnitId &&
+          visit.visitDate === snapshot.currentDate
+        );
+      }).length
+    : 0;
+  const currentUnitVisitMonthCount = currentUnitId
+    ? snapshot.visits.filter((visit) => {
+        const patient = snapshot.patients.find(
+          (row) => row.id === visit.patientId,
+        );
+        return (
+          patient?.assignedUnitId === currentUnitId &&
+          monthKey(visit.visitDate) === monthKey(snapshot.currentDate)
+        );
+      }).length
+    : 0;
+  const registryTrackingPatients = visiblePatients.filter(
+    (patient) =>
+      patient.careStatus === "registered" ||
+      patient.careStatus === "scheduled" ||
+      patient.careStatus === "active",
+  );
+  const registryCompletedPatients = visiblePatients.filter(
+    (patient) => patient.careStatus === "completed",
+  );
+  const registryMode = isUnitManager ? unitManagerRegistryMode : nurseRegistryMode;
+  const registryBasePatients =
+    isUnitNurse || isUnitManager
+      ? registryMode === "tracking"
+        ? registryTrackingPatients
+        : registryCompletedPatients
+      : visiblePatients;
+  const registryFilteredPatients = useMemo(() => {
+    const keyword = registrySearch.trim().toLowerCase();
+    if (!keyword) return registryBasePatients;
+    return registryBasePatients.filter((patient) => {
+      const haystack =
+        `${patient.hn} ${patient.cid} ${patient.fullName} ${patient.primaryDxCode} ${patient.primaryDxName} ${patient.assignedUnitName}`.toLowerCase();
+      return haystack.includes(keyword);
+    });
+  }, [registryBasePatients, registrySearch]);
+  const registryPatientsPerPage = 21;
+  const registryPageCount = Math.max(
+    1,
+    Math.ceil(registryFilteredPatients.length / registryPatientsPerPage),
+  );
+  const currentRegistryPage = Math.min(registryPage, registryPageCount);
+  const registryPageItems = registryFilteredPatients.slice(
+    (currentRegistryPage - 1) * registryPatientsPerPage,
+    currentRegistryPage * registryPatientsPerPage,
+  );
+  const registryPageList = buildPageList(currentRegistryPage, registryPageCount);
+  const fiscalYearVisitCount = snapshot.visits.filter((visit) => {
+    if (!selectedPatient?.assignedUnitId) return false;
+    const unitPatient = snapshot.patients.find((patient) => patient.id === visit.patientId);
+    return Boolean(
+      unitPatient &&
+      unitPatient.assignedUnitId === selectedPatient.assignedUnitId &&
+      visit.visitDate >= fiscalYearStart &&
+      visit.visitDate <= snapshot.currentDate,
+    );
+  }).length;
   const canApproveUsers =
     sessionUser?.role === "hospital_admin" ||
     sessionUser?.role === "hospital_case_manager";
@@ -412,7 +597,7 @@ export function PalliativeWorkspace({
           ).length,
           latestCommentAt: latestComment?.createdAt,
         };
-      }),
+    }),
     [snapshot.comments, snapshot.currentDate, snapshot.patients, visibleUnits],
   );
   const visitSixTableRows = useMemo(() => {
@@ -437,9 +622,6 @@ export function PalliativeWorkspace({
       completed.slice(0, 6).forEach((value, roundIndex) => {
         rounds[roundIndex] = value;
       });
-      if (patient.nextVisitAt && completed.length < 6) {
-        rounds[completed.length] = patient.nextVisitAt;
-      }
       return {
         order: index + 1,
         patient,
@@ -447,6 +629,46 @@ export function PalliativeWorkspace({
       };
     });
   }, [snapshot.visits, visiblePatients]);
+  const selectedPatientVisitSixRow = useMemo(
+    () =>
+      visitSixTableRows.find(
+        (row) => row.patient.id === selectedPatient?.id,
+      ) ?? null,
+    [selectedPatient?.id, visitSixTableRows],
+  );
+  const displayedSelectedPatientVisitHistory = selectedPatient?.hn
+    ? selectedPatientVisitHistory
+    : [];
+
+  useEffect(() => {
+    if (!selectedPatient?.hn) {
+      return;
+    }
+
+    let cancelled = false;
+    startTransition(() => {
+      setSelectedPatientVisitHistoryLoading(true);
+    });
+    void requestJson(
+      `/api/candidates/history?hn=${encodeURIComponent(selectedPatient.hn)}&limit=6`,
+    )
+      .then((rows) => {
+        if (cancelled) return;
+        setSelectedPatientVisitHistory(rows as CandidateVisitHistory[]);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSelectedPatientVisitHistory([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setSelectedPatientVisitHistoryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPatient?.hn]);
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem("palliative-auth-token") ?? "";
@@ -468,7 +690,7 @@ export function PalliativeWorkspace({
         setAuthToken("");
         setSessionUser(null);
       })
-      .finally(() => setAuthReady(true));
+        .finally(() => setAuthReady(true));
   }, []);
 
   const loadPendingRequests = () => {
@@ -534,6 +756,12 @@ export function PalliativeWorkspace({
             loadPendingRequests();
           }
           await refresh();
+          if (result.user.role === "unit_manager") {
+            router.push("/unit-overview");
+          }
+          if (result.user.role === "unit_nurse") {
+            router.push("/nurse");
+          }
           setNotice("เข้าสู่ระบบสำเร็จ");
         })
         .catch((error) =>
@@ -558,6 +786,33 @@ export function PalliativeWorkspace({
     setActiveUserId(userId);
     const nextUser = snapshot.users.find((user) => user.id === userId);
     if (nextUser) {
+      if (nextUser.role === "unit_nurse") {
+        router.push("/nurse");
+        setNurseTab("search");
+        setPendingNursePatientId(null);
+        setNurseSearch("");
+        const nextPatients = snapshot.patients.filter(
+          (patient) => patient.assignedUnitId === nextUser.unitId,
+        );
+        if (nextPatients[0]) {
+          setSelectedPatientId(nextPatients[0].id);
+          syncPatientDrafts(nextPatients[0]);
+        }
+        setRenameDraft(nextUser.displayName);
+        return;
+      }
+      if (nextUser.role === "unit_manager") {
+        router.push("/unit-overview");
+        setRenameDraft(nextUser.displayName);
+        const nextPatients = snapshot.patients.filter(
+          (patient) => patient.assignedUnitId === nextUser.unitId,
+        );
+        if (nextPatients[0]) {
+          setSelectedPatientId(nextPatients[0].id);
+          syncPatientDrafts(nextPatients[0]);
+        }
+        return;
+      }
       if (nextUser.role === "hospital_case_manager") {
         router.push("/case-manager");
         return;
@@ -725,8 +980,10 @@ export function PalliativeWorkspace({
       note: "",
     });
     setVisitChecklist(defaultVisitChecklistState);
-    setVisitFiles(null);
-    setVisitFileInputKey((value) => value + 1);
+    setPatientCardFiles(null);
+    setFollowUpFiles(null);
+    setPatientCardFileInputKey((value) => value + 1);
+    setFollowUpFileInputKey((value) => value + 1);
   };
 
   const selectPatient = (patient?: PalliativePatient) => {
@@ -861,12 +1118,24 @@ export function PalliativeWorkspace({
       setNotice("กรุณาบันทึกอาการติดตาม");
       return;
     }
-    if (!visitFiles?.length) {
-      setNotice("กรุณาแนบภาพผู้ป่วยอย่างน้อย 1 รูป");
+    if (!patientCardFiles?.length) {
+      setNotice("กรุณาแนบรูปบัตรคู่กับคนไข้");
+      return;
+    }
+    if (!followUpFiles?.length) {
+      setNotice("กรุณาแนบรูปติดตามอาการคนไข้");
       return;
     }
 
-    const photos = await filesToPayload(visitFiles);
+    const cardPhotos = await filesToPayloadWithCaption(
+      patientCardFiles,
+      "patient-card",
+    );
+    const followUpPhotos = await filesToPayloadWithCaption(
+      followUpFiles,
+      "follow-up",
+    );
+    const photos = [...cardPhotos, ...followUpPhotos];
     const normalizedChecklist: VisitChecklist = {
       ...visitChecklist,
       symptomAssessment: true,
@@ -889,8 +1158,10 @@ export function PalliativeWorkspace({
       "บันทึกการเยี่ยมแล้ว",
       () => {
         setVisitChecklist(defaultVisitChecklistState);
-        setVisitFiles(null);
-        setVisitFileInputKey((value) => value + 1);
+        setPatientCardFiles(null);
+        setFollowUpFiles(null);
+        setPatientCardFileInputKey((value) => value + 1);
+        setFollowUpFileInputKey((value) => value + 1);
       },
     );
   };
@@ -1129,131 +1400,484 @@ export function PalliativeWorkspace({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
       <header className="rounded-[2.4rem] bg-[linear-gradient(135deg,#0c3148_0%,#104a61_46%,#cfe9e8_100%)] p-6 text-white shadow-[0_30px_80px_rgba(6,29,43,0.22)] sm:p-8">
-        <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
-          <div>
-            <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/85">
-              Palliative Home Visit Command Center
-            </div>
-            <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
-              ระบบติดตามการเยี่ยมบ้าน Palliative ตามเกณฑ์ สปสช.
-            </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
-              เชื่อมงานโรงพยาบาล, รพ.สต. และ PCU ตั้งแต่คัดเลือกเคสจาก HOSXP
-              ไปจนถึงสรุป STM เพื่อแบ่งเงินแต่ละหน่วย
-            </p>
-          </div>
-          <div className="rounded-[1.8rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
-            <div className="text-xs uppercase tracking-[0.24em] text-white/70">
-              ผู้ใช้งานปัจจุบัน
-            </div>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-              {isAdmin ? (
-                <select
-                  value={activeUserId}
-                  onChange={(event) => switchUserView(event.target.value)}
-                  className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
-                >
-                  {selectableUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.displayName} - {formatRoleLabel(user.role)}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  value={`${sessionUser.displayName} - ${formatRoleLabel(sessionUser.role)}`}
-                  readOnly
-                  className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => void refresh()}
-                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
-              >
-                รีเฟรช
-              </button>
-              <button
-                type="button"
-                onClick={signOut}
-                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
-              >
-                ออกจากระบบ
-              </button>
-            </div>
-            <div className="mt-4 rounded-2xl bg-[#0b2c3f]/45 p-4 text-sm text-white/82">
-              <div className="font-medium text-white">
-                {currentUser?.displayName}
+        {isUnitNurse ? (
+          <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr] xl:items-end">
+            <div>
+              <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/85">
+                Nurse Workspace
               </div>
-              <div className="mt-1">
-                {currentUser ? formatRoleLabel(currentUser.role) : "-"}
-              </div>
-              <div className="mt-1 text-white/70">
-                หน่วย{" "}
-                {snapshot.units.find((unit) => unit.id === currentUser?.unitId)
-                  ?.name ?? "-"}
-              </div>
-              {isAdmin ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/case-manager")}
-                    className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
-                  >
-                    ไปหน้า Case Manager
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/case-manager/registry")}
-                    className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
-                  >
-                    ไปหน้าทะเบียนเคส
-                  </button>
+              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
+                งานพยาบาลหน่วย
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
+                ค้นหาคนไข้ของหน่วยตัวเอง ยืนยันการรับงาน บันทึกเยี่ยมบ้าน และดูผลลัพธ์เฉพาะสถานบริการของคุณ
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-[1.4rem] border border-white/20 bg-white/10 p-4">
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
+                    คนไข้คงเหลือ
+                  </div>
+                  <div className="mt-3 text-3xl font-semibold">
+                    {currentUnitSummary?.activePatients ?? visiblePatients.length}
+                  </div>
                 </div>
+                <div className="rounded-[1.4rem] border border-white/20 bg-white/10 p-4">
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
+                    ถึงกำหนดวันนี้
+                  </div>
+                  <div className="mt-3 text-3xl font-semibold">
+                    {currentUnitVisitTodayCount}
+                  </div>
+                </div>
+                <div className="rounded-[1.4rem] border border-white/20 bg-white/10 p-4">
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
+                    เยี่ยมเดือนนี้
+                  </div>
+                  <div className="mt-3 text-3xl font-semibold">
+                    {currentUnitSummary?.visitsThisMonth ?? 0}
+                  </div>
+                </div>
+                <div className="rounded-[1.4rem] border border-white/20 bg-white/10 p-4">
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
+                    ปีงบประมาณ
+                  </div>
+                  <div className="mt-3 text-3xl font-semibold">
+                    {fiscalYearVisitCount}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-[1.8rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="text-xs uppercase tracking-[0.24em] text-white/70">
+                ผู้ใช้งานปัจจุบัน
+              </div>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                {isAdmin ? (
+                  <select
+                    value={activeUserId}
+                    onChange={(event) => switchUserView(event.target.value)}
+                    className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
+                  >
+                    {selectableUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.displayName} - {formatRoleLabel(user.role)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={`${sessionUser.displayName} - ${formatRoleLabel(sessionUser.role)}`}
+                    readOnly
+                    className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  รีเฟรช
+                </button>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+              <div className="mt-4 rounded-2xl bg-[#0b2c3f]/45 p-4 text-sm text-white/82">
+                <div className="font-medium text-white">
+                  {currentUser?.displayName}
+                </div>
+                <div className="mt-1">
+                  {currentUser ? formatRoleLabel(currentUser.role) : "-"}
+                </div>
+                <div className="mt-1 text-white/70">
+                  หน่วย{" "}
+                  {snapshot.units.find((unit) => unit.id === currentUser?.unitId)
+                    ?.name ?? "-"}
+                </div>
+              </div>
+              {notice ? (
+                <div className="mt-3 text-sm text-white/90">{notice}</div>
               ) : null}
             </div>
-            {notice ? (
-              <div className="mt-3 text-sm text-white/90">{notice}</div>
-            ) : null}
           </div>
-        </div>
-        <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[1.6rem] border border-white/20 bg-white/12 p-4">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
-              ทะเบียนทั้งหมด
+        ) : (
+          <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
+            <div>
+              <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/85">
+                Palliative Home Visit Command Center
+              </div>
+              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
+                ระบบติดตามการเยี่ยมบ้าน Palliative ตามเกณฑ์ สปสช.
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
+                เชื่อมงานโรงพยาบาล, รพ.สต. และ PCU ตั้งแต่คัดเลือกเคสจาก HOSXP
+                ไปจนถึงสรุป STM เพื่อแบ่งเงินแต่ละหน่วย
+              </p>
             </div>
-            <div className="mt-3 text-3xl font-semibold">
-              {snapshot.dashboard.registeredCount}
+            <div className="rounded-[1.8rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="text-xs uppercase tracking-[0.24em] text-white/70">
+                ผู้ใช้งานปัจจุบัน
+              </div>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                {isAdmin ? (
+                  <select
+                    value={activeUserId}
+                    onChange={(event) => switchUserView(event.target.value)}
+                    className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
+                  >
+                    {selectableUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.displayName} - {formatRoleLabel(user.role)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={`${sessionUser.displayName} - ${formatRoleLabel(sessionUser.role)}`}
+                    readOnly
+                    className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  รีเฟรช
+                </button>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+              <div className="mt-4 rounded-2xl bg-[#0b2c3f]/45 p-4 text-sm text-white/82">
+                <div className="font-medium text-white">
+                  {currentUser?.displayName}
+                </div>
+                <div className="mt-1">
+                  {currentUser ? formatRoleLabel(currentUser.role) : "-"}
+                </div>
+                <div className="mt-1 text-white/70">
+                  หน่วย{" "}
+                  {snapshot.units.find((unit) => unit.id === currentUser?.unitId)
+                    ?.name ?? "-"}
+                </div>
+                {isAdmin ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push("/case-manager")}
+                      className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
+                    >
+                      ไปหน้า Case Manager
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/case-manager/registry")}
+                      className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
+                    >
+                      ไปหน้าทะเบียนเคส
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+              {notice ? (
+                <div className="mt-3 text-sm text-white/90">{notice}</div>
+              ) : null}
             </div>
           </div>
-          <div className="rounded-[1.6rem] border border-white/20 bg-white/12 p-4">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
-              ครบเงื่อนไขเบิก
-            </div>
-            <div className="mt-3 text-3xl font-semibold">
-              {snapshot.dashboard.claimReadyCount}
-            </div>
-          </div>
-          <div className="rounded-[1.6rem] border border-white/20 bg-white/12 p-4">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
-              เยี่ยมใน 7 วัน
-            </div>
-            <div className="mt-3 text-3xl font-semibold">
-              {snapshot.dashboard.dueThisWeek}
-            </div>
-          </div>
-          <div className="rounded-[1.6rem] border border-white/20 bg-white/12 p-4">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-white/70">
-              Opioid / STM
-            </div>
-            <div className="mt-3 text-3xl font-semibold">
-              {snapshot.dashboard.opioidCount} / {snapshot.stmBatches.length}
-            </div>
-          </div>
-        </div>
+        )}
       </header>
+      {isUnitNurse ? (
+        <section className="rounded-[1.8rem] border border-[rgba(20,55,84,0.12)] bg-white p-4 shadow-[0_20px_50px_rgba(8,33,51,0.08)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-semibold text-[#123047]">
+                แถบการทำงานพยาบาล
+              </div>
+              <div className="mt-1 text-xs text-[#5f7486]">
+                ค้นหาคนไข้ของหน่วยตัวเอง, ยืนยันการเลือก, ทะเบียน, เยี่ยมบ้าน และภาพรวมผลลัพธ์
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              {(
+                [
+                  ["search", "ค้นหา/ยืนยัน"],
+                  ["registry", "ทะเบียน"],
+                  ["visit", "เยี่ยมบ้าน"],
+                  ["progress", "ภาพรวม"],
+                ] as Array<[NurseWorkspaceTab, string]>
+              ).map(([tab, label]) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setNurseTab(tab)}
+                  className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${nurseTab === tab ? "bg-[#123047] text-white" : "border border-[#d9e5ec] bg-[#f7fbfd] text-[#123047]"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      {isUnitNurse && nurseTab === "search" ? (
+        <Box
+          title="ค้นหาคนไข้ของหน่วย"
+          note="แสดงเฉพาะคนไข้ที่อยู่ในสถานบริการของคุณ เลือกแล้วค่อยยืนยันเพื่อเปิดหน้าเยี่ยมบ้าน"
+        >
+          <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="space-y-4">
+              <input
+                value={nurseSearch}
+                onChange={(event) => {
+                  setNurseSearch(event.target.value);
+                  setNursePatientPage(1);
+                }}
+                placeholder="ค้นหา HN / CID / ชื่อ / Dx"
+                className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+              />
+              <div className="space-y-2">
+                {nursePatientsPageItems.map((patient) => (
+                  <button
+                    key={patient.id}
+                    type="button"
+                    onClick={() => setPendingNursePatientId(patient.id)}
+                    className="w-full rounded-[1.4rem] border border-[#e2edf4] bg-white p-4 text-left transition hover:bg-[#f8fbfd]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-[#123047]">
+                          {patient.fullName}
+                        </div>
+                        <div className="mt-1 text-xs text-[#6f8190]">
+                          HN {patient.hn} · CID {patient.cid}
+                        </div>
+                      </div>
+                      <span className="inline-flex rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#123047]">
+                        {patient.assignedUnitName}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+                {!nursePatients.length ? (
+                  <div className="rounded-[1.4rem] border border-dashed border-[#d9e5ec] bg-[#f7fbfd] p-5 text-sm text-[#6f8190]">
+                    ไม่พบคนไข้ในหน่วยของคุณตามคำค้นนี้
+                  </div>
+                ) : null}
+                {nursePatients.length > nursePatientsPerPage ? (
+                  <div className="flex items-center justify-between rounded-[1.4rem] border border-[#e2edf4] bg-[#f7fbfd] px-4 py-3 text-sm text-[#123047]">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNursePatientPage((page) => Math.max(1, page - 1))
+                      }
+                      disabled={nursePatientsPage <= 1}
+                      className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-2 text-sm font-medium text-[#123047] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ก่อนหน้า
+                    </button>
+                    <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                      หน้า {nursePatientsPage} / {nursePatientsPageCount}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNursePatientPage((page) =>
+                          Math.min(nursePatientsPageCount, page + 1),
+                        )
+                      }
+                      disabled={nursePatientsPage >= nursePatientsPageCount}
+                      className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-2 text-sm font-medium text-[#123047] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ถัดไป
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="rounded-[1.5rem] bg-[#f7fbfd] p-5">
+              {pendingNursePatient ? (
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                      คนไข้ที่เลือก
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#123047]">
+                      {pendingNursePatient.fullName}
+                    </div>
+                    <div className="mt-2 text-sm text-[#6f8190]">
+                      HN {pendingNursePatient.hn} · CID {pendingNursePatient.cid}
+                    </div>
+                  </div>
+                  <div className="rounded-[1.4rem] border border-[#d9e5ec] bg-white p-4 text-sm text-[#123047]">
+                    หน่วยตามที่อยู่: {pendingNursePatient.assignedUnitName}
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPatientId(pendingNursePatient.id);
+                        setPendingNursePatientId(null);
+                        setNurseTab("visit");
+                      }}
+                      className="rounded-2xl bg-[#0f766e] px-5 py-3 text-sm font-medium text-white"
+                    >
+                      ยืนยัน
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingNursePatientId(null)}
+                      className="rounded-2xl border border-[#d9e5ec] bg-white px-5 py-3 text-sm font-medium text-[#123047]"
+                    >
+                      ยกเลิก
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-[#6f8190]">
+                  แตะที่รายชื่อคนไข้เพื่อดูชื่อและเลขบัตรประชาชนก่อนยืนยัน
+                </div>
+              )}
+            </div>
+          </div>
+        </Box>
+      ) : null}
+
+      {isUnitNurse && nurseTab === "progress" ? (
+        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <Box
+            title="ภาพรวมผลลัพธ์ของหน่วย"
+            note="สรุปงานประจำวัน รายเดือน และปีงบประมาณของหน่วยตัวเอง"
+          >
+            {currentUnitSummary ? (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-[1.4rem] bg-[#f7fbfd] p-4">
+                  <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                    คนไข้คงเหลือ
+                  </div>
+                  <div className="mt-2 text-3xl font-semibold text-[#123047]">
+                    {currentUnitSummary.activePatients}
+                  </div>
+                </div>
+                <div className="rounded-[1.4rem] bg-[#f7fbfd] p-4">
+                  <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                    ถึงกำหนดวันนี้
+                  </div>
+                  <div className="mt-2 text-3xl font-semibold text-[#123047]">
+                    {currentUnitVisitTodayCount}
+                  </div>
+                </div>
+                <div className="rounded-[1.4rem] bg-[#f7fbfd] p-4">
+                  <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                    เยี่ยมเดือนนี้
+                  </div>
+                  <div className="mt-2 text-3xl font-semibold text-[#123047]">
+                    {currentUnitSummary.visitsThisMonth}
+                  </div>
+                </div>
+                <div className="rounded-[1.4rem] bg-[#f7fbfd] p-4">
+                  <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                    ปีงบประมาณนี้
+                  </div>
+                  <div className="mt-2 text-3xl font-semibold text-[#123047]">
+                    {fiscalYearVisitCount}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            {currentUnitSummary ? (
+              <div className="mt-5 space-y-3">
+                <div>
+                  <div className="flex items-center justify-between text-sm text-[#5f7486]">
+                    <span>ความพร้อมเบิก</span>
+                    <span>
+                      {currentUnitSummary.claimReady}/{currentUnitSummary.activePatients}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-3 rounded-full bg-[#e7f0f4]">
+                    <div
+                      className="h-3 rounded-full bg-[#0f766e]"
+                      style={{
+                        width: `${
+                          currentUnitSummary.activePatients
+                            ? Math.round(
+                                (currentUnitSummary.claimReady /
+                                  currentUnitSummary.activePatients) *
+                                  100,
+                              )
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between text-sm text-[#5f7486]">
+                    <span>คนไข้ที่ยังต้องติดตาม</span>
+                    <span>{currentUnitRemainingCount}</span>
+                  </div>
+                  <div className="mt-2 h-3 rounded-full bg-[#e7f0f4]">
+                    <div
+                      className="h-3 rounded-full bg-[#f59e0b]"
+                      style={{
+                        width: `${
+                          currentUnitSummary.activePatients
+                            ? Math.round(
+                                (currentUnitRemainingCount /
+                                  currentUnitSummary.activePatients) *
+                                  100,
+                              )
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </Box>
+          <Box
+            title="ทะเบียนหน่วยตัวเอง"
+            note="ใช้ดูคิวเยี่ยมและสถานะเบิกเฉพาะสถานบริการของคุณ"
+          >
+            <div className="space-y-3">
+              {visiblePatients.slice(0, 8).map((patient) => (
+                <div
+                  key={patient.id}
+                  className="flex items-center justify-between rounded-[1.3rem] border border-[#e2edf4] bg-white px-4 py-3"
+                >
+                  <div>
+                    <div className="font-medium text-[#123047]">
+                      {patient.fullName}
+                    </div>
+                    <div className="text-xs text-[#6f8190]">
+                      HN {patient.hn} · {patient.cid}
+                    </div>
+                  </div>
+                  <div className="text-right text-sm text-[#123047]">
+                    <div>{shortDate(patient.nextVisitAt)}</div>
+                    <div className="text-xs text-[#6f8190]">
+                      เดือน {patient.serviceMonthCount}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Box>
+        </section>
+      ) : null}
+
+      {!isUnitNurse || nurseTab === "progress" ? (
+        <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <Box
           title="คู่มือบทบาท"
           note="เปิดแล้วรู้เลยว่าหน้าที่ของคนที่ล็อกอินอยู่ต้องทำอะไรบ้าง"
@@ -1321,83 +1945,86 @@ export function PalliativeWorkspace({
             ))}
           </div>
         </Box>
-      </section>
+        </section>
+      ) : null}
 
-      <Box
-        title={
-          isHospitalBoard ? "ตารางสรุปผลงานรายหน่วย" : "สรุปงานของหน่วยฉัน"
-        }
-        note="ใช้ติดตามจำนวนเคส งานที่ค้าง และความพร้อมเบิกของแต่ละหน่วยในมุมมองเดียว"
-      >
-        <div className="overflow-hidden rounded-[1.5rem] border border-[#e2edf4]">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-[#f5fafc] text-xs uppercase tracking-[0.2em] text-[#6f8190]">
-                <tr>
-                  <th className="px-4 py-4">หน่วย</th>
-                  <th className="px-4 py-4">เคสในมือ</th>
-                  <th className="px-4 py-4">ถึงกำหนดวันนี้</th>
-                  <th className="px-4 py-4">นัดใน 7 วัน</th>
-                  <th className="px-4 py-4">พร้อมเบิก</th>
-                  <th className="px-4 py-4">ค้างรูป/ข้อมูล</th>
-                  <th className="px-4 py-4">เยี่ยมเดือนนี้</th>
-                  <th className="px-4 py-4">คอมเมนต์ล่าสุด</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unitReportRows.map((row) => (
-                  <tr
-                    key={row.unitId}
-                    className="border-t border-[#edf3f7] bg-white"
-                  >
-                    <td className="px-4 py-4">
-                      <div className="font-medium text-[#123047]">
-                        {row.unitName}
-                      </div>
-                      <div className="mt-1 text-xs text-[#6f8190]">
-                        {row.unitKind === "pcu" ? "PCU" : "รพ.สต."}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 font-medium text-[#123047]">
-                      {row.activePatients}
-                    </td>
-                    <td className="px-4 py-4 text-[#123047]">{row.dueToday}</td>
-                    <td className="px-4 py-4 text-[#123047]">
-                      {row.dueThisWeek}
-                    </td>
-                    <td className="px-4 py-4 text-[#123047]">
-                      {row.claimReady}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-[#123047]">
-                        รอรูป {row.pendingPhotos}
-                      </div>
-                      <div className="text-xs text-[#6f8190]">
-                        ยังไม่พร้อมเบิก {row.incompleteClaims}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-[#123047]">
-                      {row.visitsThisMonth}
-                    </td>
-                    <td className="px-4 py-4 text-[#123047]">
-                      {row.latestCommentAt
-                        ? formatDateTime(row.latestCommentAt)
-                        : "-"}
-                      {row.overdue > 0 ? (
-                        <div className="mt-1 text-xs text-[#b14a1f]">
-                          เกินกำหนด {row.overdue}
-                        </div>
-                      ) : null}
-                    </td>
+      {!isUnitNurse || nurseTab === "progress" ? (
+        <Box
+          title={
+            isHospitalBoard ? "ตารางสรุปผลงานรายหน่วย" : "สรุปงานของหน่วยฉัน"
+          }
+          note="ใช้ติดตามจำนวนเคส งานที่ค้าง และความพร้อมเบิกของแต่ละหน่วยในมุมมองเดียว"
+        >
+          <div className="overflow-hidden rounded-[1.5rem] border border-[#e2edf4]">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-[#f5fafc] text-xs uppercase tracking-[0.2em] text-[#6f8190]">
+                  <tr>
+                    <th className="px-4 py-4">หน่วย</th>
+                    <th className="px-4 py-4">เคสในมือ</th>
+                    <th className="px-4 py-4">ถึงกำหนดวันนี้</th>
+                    <th className="px-4 py-4">นัดใน 7 วัน</th>
+                    <th className="px-4 py-4">พร้อมเบิก</th>
+                    <th className="px-4 py-4">ค้างรูป/ข้อมูล</th>
+                    <th className="px-4 py-4">เยี่ยมเดือนนี้</th>
+                    <th className="px-4 py-4">คอมเมนต์ล่าสุด</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {unitReportRows.map((row) => (
+                    <tr
+                      key={row.unitId}
+                      className="border-t border-[#edf3f7] bg-white"
+                    >
+                      <td className="px-4 py-4">
+                        <div className="font-medium text-[#123047]">
+                          {row.unitName}
+                        </div>
+                        <div className="mt-1 text-xs text-[#6f8190]">
+                          {row.unitKind === "pcu" ? "PCU" : "รพ.สต."}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 font-medium text-[#123047]">
+                        {row.activePatients}
+                      </td>
+                      <td className="px-4 py-4 text-[#123047]">{row.dueToday}</td>
+                      <td className="px-4 py-4 text-[#123047]">
+                        {row.dueThisWeek}
+                      </td>
+                      <td className="px-4 py-4 text-[#123047]">
+                        {row.claimReady}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-[#123047]">
+                          รอรูป {row.pendingPhotos}
+                        </div>
+                        <div className="text-xs text-[#6f8190]">
+                          ยังไม่พร้อมเบิก {row.incompleteClaims}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-[#123047]">
+                        {row.visitsThisMonth}
+                      </td>
+                      <td className="px-4 py-4 text-[#123047]">
+                        {row.latestCommentAt
+                          ? formatDateTime(row.latestCommentAt)
+                          : "-"}
+                        {row.overdue > 0 ? (
+                          <div className="mt-1 text-xs text-[#b14a1f]">
+                            เกินกำหนด {row.overdue}
+                          </div>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </Box>
+        </Box>
+      ) : null}
 
-      {isHospitalBoard && !isCaseManager ? (
+      {isHospitalBoard && !isUnitManager ? (
         <Box
           title={
             isCaseManager
@@ -1615,19 +2242,11 @@ export function PalliativeWorkspace({
                       ),
                     )}
                   </div>
-                  <select
-                    value={registerUnitId}
-                    onChange={(event) => setRegisterUnitId(event.target.value)}
-                    className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                  >
-                    {snapshot.units
-                      .filter((unit) => unit.kind !== "hospital")
-                      .map((unit) => (
-                        <option key={unit.id} value={unit.id}>
-                          {unit.name}
-                        </option>
-                      ))}
-                  </select>
+                  <div className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm text-[#123047]">
+                    สถานบริการตามที่อยู่:{" "}
+                    {snapshot.units.find((unit) => unit.id === registerUnitId)
+                      ?.name ?? selectedCandidate.clinicName}
+                  </div>
                   <input
                     type="date"
                     value={registerDate}
@@ -1681,123 +2300,187 @@ export function PalliativeWorkspace({
           </div>
         </Box>
       ) : null}
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <Box
-          title={
-            isHospitalBoard
-              ? "ทะเบียนผู้ป่วยทั้งเครือข่าย"
-              : "ผู้ป่วยในหน่วยของฉัน"
-          }
-          note="คลิกแต่ละแถวเพื่อเปิดรายละเอียดเคสและประวัติการเยี่ยม"
-        >
-          <div className="overflow-hidden rounded-[1.5rem] border border-[#e2edf4]">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-[#f5fafc] text-xs uppercase tracking-[0.2em] text-[#6f8190]">
-                  <tr>
-                    <th className="px-4 py-4">ผู้ป่วย</th>
-                    <th className="px-4 py-4">หน่วย</th>
-                    <th className="px-4 py-4">นัดถัดไป</th>
-                    <th className="px-4 py-4">เดือน</th>
-                    <th className="px-4 py-4">สถานะ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiblePatients.map((patient) => (
-                    <tr
-                      key={patient.id}
-                      className={`cursor-pointer border-t border-[#edf3f7] ${selectedPatient?.id === patient.id ? "bg-[#eef8f8]" : "hover:bg-[#f8fbfd]"}`}
-                      onClick={() => selectPatient(patient)}
-                    >
-                      <td className="px-4 py-4">
-                        <div className="font-medium text-[#123047]">
-                          {patient.fullName}
-                        </div>
-                        <div className="mt-1 text-xs text-[#6f8190]">
-                          HN {patient.hn} · {patient.primaryDxCode}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-[#123047]">
-                        {patient.assignedUnitName}
-                      </td>
-                      <td className="px-4 py-4 text-[#123047]">
-                        {shortDate(patient.nextVisitAt)}
-                      </td>
-                      <td className="px-4 py-4 text-[#123047]">
-                        {patient.serviceMonthCount}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${statusClass(patient.careStatus)}`}
-                        >
-                          {statusLabel(patient.careStatus)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {!isUnitNurse || nurseTab === "registry" ? (
+        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <Box
+            title={
+              isHospitalBoard
+                ? "ทะเบียนผู้ป่วยทั้งเครือข่าย"
+                : "ผู้ป่วยในหน่วยของฉัน"
+            }
+            note="คลิกแต่ละแถวเพื่อเปิดรายละเอียดเคสและประวัติการเยี่ยม"
+          >
+            {isUnitNurse || isUnitManager ? (
+              <>
+                {isUnitManager ? (
+                  <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[1.2rem] bg-[#f7fbfd] p-4">
+                      <div className="text-[11px] uppercase tracking-[0.22em] text-[#6f8190]">
+                        กำลังติดตาม
+                      </div>
+                      <div className="mt-2 text-2xl font-semibold text-[#123047]">
+                        {registryTrackingPatients.length}
+                      </div>
+                    </div>
+                    <div className="rounded-[1.2rem] bg-[#f7fbfd] p-4">
+                      <div className="text-[11px] uppercase tracking-[0.22em] text-[#6f8190]">
+                        ติดตามครบแล้ว
+                      </div>
+                      <div className="mt-2 text-2xl font-semibold text-[#123047]">
+                        {registryCompletedPatients.length}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                  <div className="rounded-[1.2rem] bg-[#f7fbfd] p-4">
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-[#6f8190]">
+                      เคสเหลืออยู่
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-[#123047]">
+                      {currentUnitRemainingCount}
+                    </div>
+                  </div>
+                  <div className="rounded-[1.2rem] bg-[#f7fbfd] p-4">
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-[#6f8190]">
+                      ทำไปแล้ว
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-[#123047]">
+                      {currentUnitCompletedCount}
+                    </div>
+                  </div>
+                  <div className="rounded-[1.2rem] bg-[#f7fbfd] p-4">
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-[#6f8190]">
+                      สำเร็จวันนี้
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-[#123047]">
+                      {currentUnitVisitTodayCount}
+                    </div>
+                  </div>
+                  <div className="rounded-[1.2rem] bg-[#f7fbfd] p-4">
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-[#6f8190]">
+                      สำเร็จเดือนนี้
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-[#123047]">
+                      {currentUnitVisitMonthCount}
+                    </div>
+                  </div>
+                  <div className="rounded-[1.2rem] bg-[#f7fbfd] p-4">
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-[#6f8190]">
+                      ปีงบประมาณ
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-[#123047]">
+                      {fiscalYearVisitCount}
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegistryPage(1);
+                      if (isUnitManager) {
+                        setUnitManagerRegistryMode("tracking");
+                      } else {
+                        setNurseRegistryMode("tracking");
+                      }
+                    }}
+                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${(isUnitManager ? unitManagerRegistryMode : nurseRegistryMode) === "tracking" ? "bg-[#123047] text-white" : "border border-[#d9e5ec] bg-[#f7fbfd] text-[#123047]"}`}
+                  >
+                    คนไข้ที่กำลังติดตาม
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegistryPage(1);
+                      if (isUnitManager) {
+                        setUnitManagerRegistryMode("completed");
+                      } else {
+                        setNurseRegistryMode("completed");
+                      }
+                    }}
+                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${(isUnitManager ? unitManagerRegistryMode : nurseRegistryMode) === "completed" ? "bg-[#0f766e] text-white" : "border border-[#d9e5ec] bg-[#f7fbfd] text-[#123047]"}`}
+                  >
+                    {isUnitManager ? "ติดตามครบแล้ว" : "ครบเงื่อนไขการติดตาม"}
+                  </button>
+                </div>
+              </>
+            ) : null}
+            <div className="mb-4 flex flex-col gap-3 rounded-[1.3rem] border border-[#dce9ef] bg-[#f8fcfe] p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <label className="sr-only" htmlFor="registry-patient-search">
+                  ค้นหาคนไข้
+                </label>
+                <input
+                  id="registry-patient-search"
+                  value={registrySearch}
+                  onChange={(event) => {
+                    setRegistrySearch(event.target.value);
+                    setRegistryPage(1);
+                  }}
+                  placeholder="ค้นหา HN / CID / ชื่อ / Dx / หน่วย"
+                  className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[#5f7486]">
+                <span className="rounded-full border border-[#d9e5ec] bg-white px-3 py-1.5">
+                  แสดง {registryPageItems.length} จาก {registryFilteredPatients.length} ราย
+                </span>
+                <span className="rounded-full border border-[#d9e5ec] bg-white px-3 py-1.5">
+                  หน้า {currentRegistryPage}/{registryPageCount}
+                </span>
+              </div>
             </div>
-          </div>
-        </Box>
-        <Box
-          title="ตารางเยี่ยมและสถานะเบิก"
-          note="ดูคิวเยี่ยม รายการพร้อมเบิก และรายการที่ยังต้องตามข้อมูลต่อ"
-        >
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-[1.4rem] border border-[#e2edf4] bg-[#f7fbfd]">
+            <div className="overflow-hidden rounded-[1.5rem] border border-[#e2edf4]">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-[#ecf4f8] text-xs font-semibold text-[#446075]">
+                  <thead className="bg-[#f5fafc] text-xs uppercase tracking-[0.2em] text-[#6f8190]">
                     <tr>
-                      <th className="px-4 py-3">ลำดับ</th>
-                      <th className="px-4 py-3">ชื่อ</th>
-                      <th className="px-4 py-3">ครั้งที่1</th>
-                      <th className="px-4 py-3">ครั้งที่2</th>
-                      <th className="px-4 py-3">ครั้งที่3</th>
-                      <th className="px-4 py-3">ครั้งที่4</th>
-                      <th className="px-4 py-3">ครั้งที่5</th>
-                      <th className="px-4 py-3">ครั้งที่6</th>
+                      <th className="px-4 py-4">ผู้ป่วย</th>
+                      <th className="px-4 py-4">หน่วย</th>
+                      <th className="px-4 py-4">นัดถัดไป</th>
+                      <th className="px-4 py-4">เดือน</th>
+                      <th className="px-4 py-4">สถานะ</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {visitSixTableRows.length ? (
-                      visitSixTableRows.slice(0, 20).map((row) => (
+                    {registryPageItems.length ? (
+                      registryPageItems.map((patient) => (
                         <tr
-                          key={row.patient.id}
-                          className={`border-t border-[#edf3f7] ${selectedPatient?.id === row.patient.id ? "bg-[#eaf6ff]" : "bg-white hover:bg-[#f8fbfd]"}`}
+                          key={patient.id}
+                          className={`cursor-pointer border-t border-[#edf3f7] ${selectedPatient?.id === patient.id ? "bg-[#eef8f8]" : "hover:bg-[#f8fbfd]"}`}
+                          onClick={() => selectPatient(patient)}
                         >
-                          <td className="px-4 py-3 text-[#123047]">
-                            {row.order}
-                          </td>
-                          <td
-                            className="cursor-pointer px-4 py-3 text-[#123047]"
-                            onClick={() => selectPatient(row.patient)}
-                          >
-                            <div className="font-medium">
-                              {row.patient.fullName}
+                          <td className="px-4 py-4">
+                            <div className="font-medium text-[#123047]">
+                              {patient.fullName}
                             </div>
-                            <div className="text-xs text-[#6f8190]">
-                              HN {row.patient.hn}
+                            <div className="mt-1 text-xs text-[#6f8190]">
+                              HN {patient.hn} · {patient.primaryDxCode}
                             </div>
                           </td>
-                          {row.rounds.map((date, index) => (
-                            <td
-                              key={`${row.patient.id}-${index}`}
-                              className="px-4 py-3 text-[#123047]"
+                          <td className="px-4 py-4 text-[#123047]">
+                            {patient.assignedUnitName}
+                          </td>
+                          <td className="px-4 py-4 text-[#123047]">
+                            {shortDate(patient.nextVisitAt)}
+                          </td>
+                          <td className="px-4 py-4 text-[#123047]">
+                            {patient.serviceMonthCount}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${statusClass(patient.careStatus)}`}
                             >
-                              {date ? formatRoundDate(date) : "-"}
-                            </td>
-                          ))}
+                              {statusLabel(patient.careStatus)}
+                            </span>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td
-                          colSpan={8}
-                          className="px-4 py-8 text-center text-[#6f8190]"
-                        >
-                          ยังไม่มีข้อมูลตารางเยี่ยมบ้านในมุมมองนี้
+                        <td colSpan={5} className="px-4 py-8 text-center text-[#6f8190]">
+                          ไม่พบคนไข้ตามคำค้นหา
                         </td>
                       </tr>
                     )}
@@ -1805,460 +2488,779 @@ export function PalliativeWorkspace({
                 </table>
               </div>
             </div>
-            <div className="rounded-[1.4rem] bg-[#fff9ef] p-4">
-              <div className="text-xs uppercase tracking-[0.22em] text-[#8c6a19]">
-                พร้อมเบิก
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-[#6f8190]">
+                แสดงหน้าละ 21 รายการ
               </div>
-              <div className="mt-3 space-y-2">
-                {readyRows.length ? (
-                  readyRows.map((patient) => (
-                    <div
-                      key={patient.id}
-                      className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm"
-                    >
-                      <div>
-                        <div className="font-medium text-[#123047]">
-                          {patient.fullName}
-                        </div>
-                        <div className="text-xs text-[#6f8190]">
-                          {patient.assignedUnitName}
-                        </div>
-                      </div>
-                      <div className="text-right text-[#123047]">
-                        <div>เดือนที่ {patient.serviceMonthCount}</div>
-                        <div className="text-xs text-[#6f8190]">
-                          {claimGapLabels(patient).length
-                            ? `ยังขาด ${claimGapLabels(patient).join(", ")}`
-                            : "ครบทุกตัว"}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-[#6f8190]">
-                    ยังไม่มีเคสพร้อมเบิกในมุมมองนี้
-                  </div>
-                )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRegistryPage((page) => Math.max(1, page - 1))}
+                  disabled={currentRegistryPage <= 1}
+                  className="rounded-xl border border-[#d9e5ec] bg-white px-3 py-2 text-xs font-medium text-[#123047] disabled:opacity-40"
+                >
+                  ก่อนหน้า
+                </button>
+                {registryPageList.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setRegistryPage(page)}
+                    className={`rounded-xl px-3 py-2 text-xs font-medium ${
+                      page === currentRegistryPage
+                        ? "bg-[#123047] text-white"
+                        : "border border-[#d9e5ec] bg-white text-[#123047]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRegistryPage((page) => Math.min(registryPageCount, page + 1))
+                  }
+                  disabled={currentRegistryPage >= registryPageCount}
+                  className="rounded-xl border border-[#d9e5ec] bg-white px-3 py-2 text-xs font-medium text-[#123047] disabled:opacity-40"
+                >
+                  ถัดไป
+                </button>
               </div>
             </div>
-          </div>
-        </Box>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Box
-          title="รายละเอียดผู้ป่วย"
-          note="แก้วันเยี่ยม เบอร์โทร หน่วยรับผิดชอบ และตรวจเช็กลิสต์การเบิก"
-        >
-          <div className="space-y-5">
-            {selectedPatient ? (
-              <>
-                <div className="rounded-[1.6rem] bg-[linear-gradient(180deg,#f6fbfd_0%,#ffffff_100%)] p-5">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div>
-                      <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
-                        {selectedPatient.assignedUnitName}
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#123047]">
-                        {selectedPatient.fullName}
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${statusClass(selectedPatient.careStatus)}`}
-                    >
-                      {statusLabel(selectedPatient.careStatus)}
-                    </span>
-                    {selectedPatient.claimChecklist.opioidEligible ? (
-                      <span className="inline-flex rounded-full border border-[#efb85e55] bg-[#ffe9c2] px-3 py-1 text-xs font-medium text-[#7a5509]">
-                        Opioid
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-3 text-sm text-[#5f7486]">
-                    <span>HN {selectedPatient.hn}</span>
-                    <span>{selectedPatient.primaryDxCode}</span>
-                    <span>{selectedPatient.age} ปี</span>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {claimItems(selectedPatient).map(([label, active]) => (
-                      <span
-                        key={label}
-                        className={`inline-flex rounded-full border px-3 py-1 text-xs ${active ? "border-[#6be2d355] bg-[#6be2d322] text-[#0b4d47]" : "border-[#d6e0e7] bg-[#f6f9fb] text-[#7c8f9d]"}`}
-                      >
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input
-                    value={patientDraft.phone}
-                    onChange={(event) =>
-                      setPatientDraft((draft) => ({
-                        ...draft,
-                        phone: event.target.value,
-                      }))
-                    }
-                    placeholder="เบอร์ผู้ป่วย"
-                    className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                  />
-                  <input
-                    value={patientDraft.relativePhone}
-                    onChange={(event) =>
-                      setPatientDraft((draft) => ({
-                        ...draft,
-                        relativePhone: event.target.value,
-                      }))
-                    }
-                    placeholder="เบอร์ญาติ"
-                    className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                  />
-                  <input
-                    value={patientDraft.lineId}
-                    onChange={(event) =>
-                      setPatientDraft((draft) => ({
-                        ...draft,
-                        lineId: event.target.value,
-                      }))
-                    }
-                    placeholder="LINE ID"
-                    className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                  />
-                  <input
-                    type="date"
-                    value={patientDraft.nextVisitAt}
-                    onChange={(event) =>
-                      setPatientDraft((draft) => ({
-                        ...draft,
-                        nextVisitAt: event.target.value,
-                      }))
-                    }
-                    className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                  />
-                  <select
-                    value={patientDraft.assignedUnitId}
-                    onChange={(event) =>
-                      setPatientDraft((draft) => ({
-                        ...draft,
-                        assignedUnitId: event.target.value,
-                      }))
-                    }
-                    className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
-                  >
-                    {snapshot.units
-                      .filter((unit) => unit.kind !== "hospital")
-                      .map((unit) => (
-                        <option key={unit.id} value={unit.id}>
-                          {unit.name}
-                        </option>
-                      ))}
-                  </select>
-                  <textarea
-                    value={patientDraft.notes}
-                    onChange={(event) =>
-                      setPatientDraft((draft) => ({
-                        ...draft,
-                        notes: event.target.value,
-                      }))
-                    }
-                    rows={4}
-                    className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
-                  />
-                </div>
-                <div className="rounded-[1.4rem] border border-[#e2edf4] bg-[#f7fbfd] p-4 text-sm text-[#5f7486]">
-                  ช่วงที่อนุญาตให้เลื่อนนัด:{" "}
-                  {formatDate(selectedPatient.visitWindow.startDate)} -{" "}
-                  {formatDate(selectedPatient.visitWindow.endDate)}
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      run(
-                        () =>
-                          requestJson(`/api/registry/${selectedPatient.id}`, {
-                            method: "PATCH",
-                            body: JSON.stringify(patientDraft),
-                          }),
-                        "บันทึกข้อมูลผู้ป่วยแล้ว",
-                      )
-                    }
-                    className="rounded-2xl bg-[#123047] px-5 py-3 text-sm font-medium text-white"
-                  >
-                    บันทึกข้อมูล
-                  </button>
-                  <input
-                    value={cancelReason}
-                    onChange={(event) => setCancelReason(event.target.value)}
-                    className="min-w-[250px] rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      run(
-                        () =>
-                          requestJson(
-                            `/api/registry/${selectedPatient.id}/cancel`,
-                            {
-                              method: "POST",
-                              body: JSON.stringify({ reason: cancelReason }),
-                            },
-                          ),
-                        "ยกเลิกการลงทะเบียนแล้ว",
-                      )
-                    }
-                    className="rounded-2xl border border-[#ef476f55] bg-[#fff0f3] px-5 py-3 text-sm font-medium text-[#8d1d3e]"
-                  >
-                    ยกเลิกการลงทะเบียน
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="text-sm text-[#6f8190]">
-                ยังไม่มีผู้ป่วยในมุมมองนี้
-              </div>
-            )}
-          </div>
-        </Box>
-        <Box
-          title="บันทึกเยี่ยมบ้านและประวัติย้อนหลัง"
-          note="การบันทึกเยี่ยมต้องมี Authen code อาการติดตาม และภาพผู้ป่วยทุกครั้ง เพื่อให้ข้อมูลครบพร้อมเบิก"
-        >
-          <div className="space-y-6">
-            {selectedPatient ? (
-              <>
-                <div className="rounded-[1.5rem] bg-[#f7fbfd] p-5">
-                  <div className="mb-4 rounded-[1.3rem] border border-[#0f766e22] bg-[#ebfaf6] p-4 text-sm leading-7 text-[#0b4d47]">
-                    ก่อนบันทึกการเยี่ยม ต้องมี 4 อย่างทุกครั้ง: วันที่เยี่ยม,
-                    Authen code, อาการติดตาม และภาพผู้ป่วยอย่างน้อย 1 รูป
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <input
-                      type="date"
-                      value={visitDraft.visitDate}
-                      onChange={(event) =>
-                        setVisitDraft((draft) => ({
-                          ...draft,
-                          visitDate: event.target.value,
-                        }))
-                      }
-                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                    />
-                    <input
-                      value={visitDraft.authenCode}
-                      onChange={(event) =>
-                        setVisitDraft((draft) => ({
-                          ...draft,
-                          authenCode: event.target.value,
-                        }))
-                      }
-                      placeholder="Authen code"
-                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                    />
-                    <textarea
-                      value={visitDraft.symptoms}
-                      onChange={(event) =>
-                        setVisitDraft((draft) => ({
-                          ...draft,
-                          symptoms: event.target.value,
-                        }))
-                      }
-                      rows={3}
-                      placeholder="อาการติดตาม"
-                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
-                    />
-                    <textarea
-                      value={visitDraft.note}
-                      onChange={(event) =>
-                        setVisitDraft((draft) => ({
-                          ...draft,
-                          note: event.target.value,
-                        }))
-                      }
-                      rows={3}
-                      placeholder="บันทึกการเยี่ยม"
-                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
-                    />
-                    <input
-                      key={visitFileInputKey}
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      capture="environment"
-                      onChange={(event) => setVisitFiles(event.target.files)}
-                      className="rounded-2xl border border-dashed border-[#c9d9e3] bg-white px-4 py-3 text-sm outline-none sm:col-span-2"
-                    />
-                  </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    {Object.entries(visitChecklist).map(([key, value]) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={value}
-                          onChange={(event) =>
-                            setVisitChecklist((draft) => ({
-                              ...draft,
-                              [key]: event.target.checked,
-                            }))
-                          }
-                        />
-                        <span>
-                          {visitChecklistLabels[key as keyof VisitChecklist]}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void saveVisit()}
-                    className="mt-4 rounded-2xl bg-[#0f766e] px-5 py-3 text-sm font-medium text-white"
-                  >
-                    บันทึกการเยี่ยมครั้งนี้
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {selectedVisits.length ? (
-                    selectedVisits.map((visit) => (
-                      <div
-                        key={visit.id}
-                        className="rounded-[1.4rem] border border-[#e2edf4] p-4"
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <div className="font-medium text-[#123047]">
-                              เยี่ยมวันที่ {formatDate(visit.visitDate)}
+          </Box>
+          <Box
+            title="ตารางเยี่ยมและสถานะเบิก"
+            note="ดูคิวเยี่ยม รายการพร้อมเบิก และรายการที่ยังต้องตามข้อมูลต่อ"
+          >
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-[1.4rem] border border-[#e2edf4] bg-[#f7fbfd]">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="bg-[#ecf4f8] text-xs font-semibold text-[#446075]">
+                      <tr>
+                        <th className="px-4 py-3">ลำดับ</th>
+                        <th className="px-4 py-3">ชื่อ</th>
+                        <th className="px-4 py-3">ครั้งที่1</th>
+                        <th className="px-4 py-3">ครั้งที่2</th>
+                        <th className="px-4 py-3">ครั้งที่3</th>
+                        <th className="px-4 py-3">ครั้งที่4</th>
+                        <th className="px-4 py-3">ครั้งที่5</th>
+                        <th className="px-4 py-3">ครั้งที่6</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedPatientVisitSixRow ? (
+                        <tr className="border-t border-[#edf3f7] bg-white">
+                          <td className="px-4 py-3 text-[#123047]">
+                            {selectedPatientVisitSixRow.order}
+                          </td>
+                          <td className="px-4 py-3 text-[#123047]">
+                            <div className="font-medium">
+                              {selectedPatientVisitSixRow.patient.fullName}
                             </div>
                             <div className="text-xs text-[#6f8190]">
-                              โดย {visit.visitorName} · Authen{" "}
-                              {visit.authenCode || "-"}
+                              HN {selectedPatientVisitSixRow.patient.hn}
+                            </div>
+                          </td>
+                          {selectedPatientVisitSixRow.rounds.map((date, index) => (
+                            <td
+                              key={`${selectedPatientVisitSixRow.patient.id}-${index}`}
+                              className="px-4 py-3 text-[#123047]"
+                            >
+                              {date ? formatRoundDate(date) : "-"}
+                            </td>
+                          ))}
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className="px-4 py-8 text-center text-[#6f8190]"
+                          >
+                            คลิกเลือกเคสจากตารางทะเบียนเพื่อดูตารางเยี่ยมและสถานะเบิก
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="rounded-[1.4rem] border border-[#d9e5ec] bg-white p-4 text-sm text-[#4d6577]">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                      ประวัติ visit จาก HOSXP
+                    </div>
+                    <div className="mt-1">
+                      เลือกเคสแล้วจะเห็น diag และใบสั่งยาของ visit นั้น
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#6f8190]">
+                    {selectedPatient?.hn ?? "ยังไม่ได้เลือกเคส"}
+                  </div>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {selectedPatientVisitHistoryLoading ? (
+                    <div className="rounded-2xl bg-[#f7fbfd] px-4 py-3 text-[#6f8190]">
+                      กำลังโหลดประวัติ visit...
+                    </div>
+                  ) : displayedSelectedPatientVisitHistory.length ? (
+                    displayedSelectedPatientVisitHistory.map((visit) => (
+                      <div
+                        key={visit.vn}
+                        className="rounded-2xl border border-[#e2edf4] bg-[#fbfdfe] p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <div className="font-medium text-[#123047]">
+                              {formatDate(visit.visitDate)}
+                            </div>
+                            <div className="mt-1 text-xs text-[#6f8190]">
+                              VN {visit.vn} · DX {visit.primaryDxCode}
                             </div>
                           </div>
-                          <span className="inline-flex rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#123047]">
-                            {visit.photos.length} รูป
+                          <span className="rounded-full border border-[#d9e5ec] bg-white px-3 py-1 text-xs text-[#6f8190]">
+                            {visit.isCompleteByCriteria ? "ครบเกณฑ์" : "ยังไม่ครบ"}
                           </span>
                         </div>
-                        <div className="mt-3 text-sm leading-7 text-[#123047]">
-                          {visit.symptoms}
-                        </div>
-                        <div className="mt-2 text-sm leading-7 text-[#5f7486]">
-                          {visit.note}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {visit.diagCodes.length ? (
+                            visit.diagCodes.map((code) => (
+                              <span
+                                key={`${visit.vn}-${code}`}
+                                className="inline-flex rounded-full border border-[#cfe3f3] bg-[#eef7ff] px-3 py-1 text-xs text-[#1d4ed8]"
+                              >
+                                {code}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-sm text-[#6f8190]">
+                              ไม่มี diag
+                            </span>
+                          )}
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {Object.entries(visit.checklist)
-                            .filter(([, active]) => active)
-                            .map(([key]) => (
+                          {visit.opitems.length ? (
+                            visit.opitems.map((item) => (
                               <span
-                                key={key}
-                                className="inline-flex rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#123047]"
+                                key={`${visit.vn}-${item.icode}`}
+                                className="inline-flex rounded-full border border-[#d9e5ec] bg-white px-3 py-1 text-xs text-[#123047]"
                               >
-                                {
-                                  visitChecklistLabels[
-                                    key as keyof VisitChecklist
-                                  ]
-                                }
+                                {item.itemName}
+                                {item.adpCode ? ` · ${item.adpCode}` : ""}
+                                {item.qty ? ` × ${item.qty}` : ""}
                               </span>
-                            ))}
+                            ))
+                          ) : (
+                            <span className="text-sm text-[#6f8190]">
+                              ไม่มีใบสั่งยา
+                            </span>
+                          )}
                         </div>
-                        {visit.photos.length ? (
-                          <div className="mt-3 flex flex-wrap gap-3">
-                            {visit.photos.map((photo) => (
-                              <Image
-                                key={photo.id}
-                                src={photo.url}
-                                alt={photo.fileName}
-                                width={80}
-                                height={80}
-                                unoptimized
-                                className="h-20 w-20 rounded-2xl object-cover"
-                              />
-                            ))}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl bg-[#f7fbfd] px-4 py-3 text-[#6f8190]">
+                      คลิกเลือกเคสจากตารางทะเบียนเพื่อดูประวัติ visit
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-[1.4rem] bg-[#fff9ef] p-4">
+                <div className="text-xs uppercase tracking-[0.22em] text-[#8c6a19]">
+                  พร้อมเบิก
+                </div>
+                <div className="mt-3 space-y-2">
+                  {readyRows.length ? (
+                    readyRows.map((patient) => (
+                      <div
+                        key={patient.id}
+                        className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm"
+                      >
+                        <div>
+                          <div className="font-medium text-[#123047]">
+                            {patient.fullName}
                           </div>
-                        ) : null}
+                          <div className="text-xs text-[#6f8190]">
+                            {patient.assignedUnitName}
+                          </div>
+                        </div>
+                        <div className="text-right text-[#123047]">
+                          <div>เดือนที่ {patient.serviceMonthCount}</div>
+                          <div className="text-xs text-[#6f8190]">
+                            {claimGapLabels(patient).length
+                              ? `ยังขาด ${claimGapLabels(patient).join(", ")}`
+                              : "ครบทุกตัว"}
+                          </div>
+                        </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-sm text-[#6f8190]">
-                      ยังไม่มีประวัติการเยี่ยม
+                      ยังไม่มีเคสพร้อมเบิกในมุมมองนี้
                     </div>
                   )}
                 </div>
-                <div className="rounded-[1.5rem] bg-[#f7fbfd] p-5">
-                  <div className="grid gap-3 sm:grid-cols-[0.8fr_0.2fr]">
-                    <textarea
-                      value={commentDraft}
-                      onChange={(event) => setCommentDraft(event.target.value)}
-                      rows={4}
-                      placeholder="ข้อความประสานงาน"
-                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                    />
-                    <div className="space-y-3">
-                      <select
-                        value={commentAudience}
-                        onChange={(event) =>
-                          setCommentAudience(
-                            event.target.value as CommentAudience,
-                          )
-                        }
-                        className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+              </div>
+            </div>
+          </Box>
+        </section>
+      ) : null}
+
+      {!isUnitManager && (!isUnitNurse || nurseTab === "visit") ? (
+        <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <Box
+            title="รายละเอียดผู้ป่วย"
+            note="แก้วันเยี่ยม เบอร์โทร หน่วยรับผิดชอบ และตรวจเช็กลิสต์การเบิก"
+          >
+            <div className="space-y-5">
+              {selectedPatient ? (
+                <>
+                  <div className="rounded-[1.6rem] bg-[linear-gradient(180deg,#f6fbfd_0%,#ffffff_100%)] p-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                          {selectedPatient.assignedUnitName}
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#123047]">
+                          {selectedPatient.fullName}
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${statusClass(selectedPatient.careStatus)}`}
                       >
-                        <option value="all">ทุกฝ่าย</option>
-                        <option value="hospital">ให้โรงพยาบาลเห็น</option>
-                        <option value="unit">ให้หน่วยเห็น</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={saveComment}
-                        className="w-full rounded-2xl bg-[#123047] px-5 py-3 text-sm font-medium text-white"
-                      >
-                        ส่งข้อความ
-                      </button>
+                        {statusLabel(selectedPatient.careStatus)}
+                      </span>
+                      {selectedPatient.claimChecklist.opioidEligible ? (
+                        <span className="inline-flex rounded-full border border-[#efb85e55] bg-[#ffe9c2] px-3 py-1 text-xs font-medium text-[#7a5509]">
+                          Opioid
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-3 text-sm text-[#5f7486]">
+                      <span>HN {selectedPatient.hn}</span>
+                      <span>{selectedPatient.primaryDxCode}</span>
+                      <span>{selectedPatient.age} ปี</span>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {claimItems(selectedPatient).map(([label, active]) => (
+                        <span
+                          key={label}
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs ${active ? "border-[#6be2d355] bg-[#6be2d322] text-[#0b4d47]" : "border-[#d6e0e7] bg-[#f6f9fb] text-[#7c8f9d]"}`}
+                        >
+                          {label}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  <div className="mt-4 space-y-3">
-                    {selectedComments.length ? (
-                      selectedComments.map((comment) => (
-                        <div
-                          key={comment.id}
-                          className="rounded-[1.4rem] bg-white p-4"
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      value={patientDraft.phone}
+                      onChange={(event) =>
+                        setPatientDraft((draft) => ({
+                          ...draft,
+                          phone: event.target.value,
+                        }))
+                      }
+                      placeholder="เบอร์ผู้ป่วย"
+                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                    />
+                    <input
+                      value={patientDraft.relativePhone}
+                      onChange={(event) =>
+                        setPatientDraft((draft) => ({
+                          ...draft,
+                          relativePhone: event.target.value,
+                        }))
+                      }
+                      placeholder="เบอร์ญาติ"
+                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                    />
+                    <input
+                      value={patientDraft.lineId}
+                      onChange={(event) =>
+                        setPatientDraft((draft) => ({
+                          ...draft,
+                          lineId: event.target.value,
+                        }))
+                      }
+                      placeholder="LINE ID"
+                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                    />
+                    <input
+                      type="date"
+                      value={patientDraft.nextVisitAt}
+                      onChange={(event) =>
+                        setPatientDraft((draft) => ({
+                          ...draft,
+                          nextVisitAt: event.target.value,
+                        }))
+                      }
+                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                    />
+                    <div className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm text-[#123047] sm:col-span-2">
+                      สถานบริการ: {selectedUnit?.name ?? selectedPatient.assignedUnitName}
+                    </div>
+                    <textarea
+                      value={patientDraft.notes}
+                      onChange={(event) =>
+                        setPatientDraft((draft) => ({
+                          ...draft,
+                          notes: event.target.value,
+                        }))
+                      }
+                      rows={4}
+                      className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
+                    />
+                  </div>
+                  <div className="rounded-[1.4rem] border border-[#e2edf4] bg-[#f7fbfd] p-4 text-sm text-[#5f7486]">
+                    ช่วงที่อนุญาตให้เลื่อนนัด:{" "}
+                    {formatDate(selectedPatient.visitWindow.startDate)} -{" "}
+                    {formatDate(selectedPatient.visitWindow.endDate)}
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        run(
+                          () =>
+                            requestJson(`/api/registry/${selectedPatient.id}`, {
+                              method: "PATCH",
+                              body: JSON.stringify(patientDraft),
+                            }),
+                          "บันทึกข้อมูลผู้ป่วยแล้ว",
+                        )
+                      }
+                      className="rounded-2xl bg-[#123047] px-5 py-3 text-sm font-medium text-white"
+                    >
+                      บันทึกข้อมูล
+                    </button>
+                    {!isUnitNurse ? (
+                      <>
+                        <input
+                          value={cancelReason}
+                          onChange={(event) =>
+                            setCancelReason(event.target.value)
+                          }
+                          className="min-w-[250px] rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            run(
+                              () =>
+                                requestJson(
+                                  `/api/registry/${selectedPatient.id}/cancel`,
+                                  {
+                                    method: "POST",
+                                    body: JSON.stringify({ reason: cancelReason }),
+                                  },
+                                ),
+                              "ยกเลิกการลงทะเบียนแล้ว",
+                            )
+                          }
+                          className="rounded-2xl border border-[#ef476f55] bg-[#fff0f3] px-5 py-3 text-sm font-medium text-[#8d1d3e]"
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="font-medium text-[#123047]">
-                                {comment.authorName}
-                              </div>
-                              <div className="text-xs text-[#6f8190]">
-                                {formatDateTime(comment.createdAt)}
-                              </div>
-                            </div>
-                            <span className="inline-flex rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#123047]">
-                              {formatAudience(comment.audience)}
-                            </span>
+                          ยกเลิกการลงทะเบียน
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-[#6f8190]">
+                  ยังไม่มีผู้ป่วยในมุมมองนี้
+                </div>
+              )}
+            </div>
+          </Box>
+          <Box
+            title="บันทึกเยี่ยมบ้านและประวัติย้อนหลัง"
+            note="แยกรูปบัตรคู่กับคนไข้และรูปติดตามอาการ เพื่อให้ตรวจย้อนหลังได้ชัด"
+          >
+            <div className="space-y-6">
+              {selectedPatient ? (
+                <>
+                  <div className="rounded-[1.5rem] bg-[#f7fbfd] p-5">
+                    <div className="mb-4 rounded-[1.3rem] border border-[#d9e5ec] bg-white p-4 text-sm text-[#4d6577]">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                            ประวัติ visit จาก HOSXP
                           </div>
-                          <div className="mt-3 text-sm leading-7 text-[#123047]">
-                            {comment.body}
+                          <div className="mt-1">
+                            แสดงเฉพาะ visit ที่เข้าเกณฑ์ตามกติกาใน vale พร้อม
+                            diag และใบสั่งยาของรอบนั้น
                           </div>
                         </div>
-                      ))
+                        <div className="rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#6f8190]">
+                          {selectedPatient.hn}
+                        </div>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {selectedPatientVisitHistoryLoading ? (
+                          <div className="rounded-2xl bg-[#f7fbfd] px-4 py-3 text-[#6f8190]">
+                            กำลังโหลดประวัติ visit...
+                          </div>
+                        ) : displayedSelectedPatientVisitHistory.length ? (
+                          displayedSelectedPatientVisitHistory.map((visit) => (
+                            <div
+                              key={visit.vn}
+                              className="rounded-2xl border border-[#e2edf4] bg-[#fbfdfe] p-4"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                  <div className="font-medium text-[#123047]">
+                                    {formatDate(visit.visitDate)}
+                                  </div>
+                                  <div className="mt-1 text-xs text-[#6f8190]">
+                                    VN {visit.vn} · DX {visit.primaryDxCode}
+                                  </div>
+                                </div>
+                                <span className="rounded-full border border-[#d9e5ec] bg-white px-3 py-1 text-xs text-[#6f8190]">
+                                  {visit.isCompleteByCriteria
+                                    ? "ครบเกณฑ์"
+                                    : "ยังไม่ครบ"}
+                                </span>
+                              </div>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {visit.diagCodes.length ? (
+                                  visit.diagCodes.map((code) => (
+                                    <span
+                                      key={`${visit.vn}-${code}`}
+                                      className="inline-flex rounded-full border border-[#cfe3f3] bg-[#eef7ff] px-3 py-1 text-xs text-[#1d4ed8]"
+                                    >
+                                      {code}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-sm text-[#6f8190]">
+                                    ไม่มี diag
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {visit.opitems.length ? (
+                                  visit.opitems.map((item) => (
+                                    <span
+                                      key={`${visit.vn}-${item.icode}`}
+                                      className="inline-flex rounded-full border border-[#d9e5ec] bg-white px-3 py-1 text-xs text-[#123047]"
+                                    >
+                                      {item.itemName}
+                                      {item.adpCode ? ` · ${item.adpCode}` : ""}
+                                      {item.qty ? ` × ${item.qty}` : ""}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-sm text-[#6f8190]">
+                                    ไม่มีใบสั่งยา
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="rounded-2xl bg-[#f7fbfd] px-4 py-3 text-[#6f8190]">
+                            ไม่พบประวัติ visit ที่เข้าเกณฑ์สำหรับ HN นี้
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mb-4 rounded-[1.3rem] border border-[#0f766e22] bg-[#ebfaf6] p-4 text-sm leading-7 text-[#0b4d47]">
+                      ก่อนบันทึกการเยี่ยม ต้องมีวันที่เยี่ยม, Authen code,
+                      อาการติดตาม, รูปบัตรคู่กับคนไข้ และรูปติดตามอาการอย่างน้อย
+                      1 รูป
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        type="date"
+                        value={visitDraft.visitDate}
+                        onChange={(event) =>
+                          setVisitDraft((draft) => ({
+                            ...draft,
+                            visitDate: event.target.value,
+                          }))
+                        }
+                        className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                      />
+                      <input
+                        value={visitDraft.authenCode}
+                        onChange={(event) =>
+                          setVisitDraft((draft) => ({
+                            ...draft,
+                            authenCode: event.target.value,
+                          }))
+                        }
+                        placeholder="Authen code"
+                        className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                      />
+                      <textarea
+                        value={visitDraft.symptoms}
+                        onChange={(event) =>
+                          setVisitDraft((draft) => ({
+                            ...draft,
+                            symptoms: event.target.value,
+                          }))
+                        }
+                        rows={3}
+                        placeholder="อาการติดตาม"
+                        className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
+                      />
+                      <textarea
+                        value={visitDraft.note}
+                        onChange={(event) =>
+                          setVisitDraft((draft) => ({
+                            ...draft,
+                            note: event.target.value,
+                          }))
+                        }
+                        rows={3}
+                        placeholder="บันทึกการเยี่ยม"
+                        className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
+                      />
+                      <div className="rounded-2xl border border-dashed border-[#c9d9e3] bg-white px-4 py-3 text-sm sm:col-span-2">
+                        <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                          {getPhotoCategoryLabel("patient-card")}
+                        </div>
+                        <input
+                          key={patientCardFileInputKey}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(event) =>
+                            setPatientCardFiles(event.target.files)
+                          }
+                          className="mt-3 w-full text-sm outline-none"
+                        />
+                      </div>
+                      <div className="rounded-2xl border border-dashed border-[#c9d9e3] bg-white px-4 py-3 text-sm sm:col-span-2">
+                        <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                          {getPhotoCategoryLabel("follow-up")}
+                        </div>
+                        <input
+                          key={followUpFileInputKey}
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(event) =>
+                            setFollowUpFiles(event.target.files)
+                          }
+                          className="mt-3 w-full text-sm outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {Object.entries(visitChecklist).map(([key, value]) => (
+                        <label
+                          key={key}
+                          className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={value}
+                            onChange={(event) =>
+                              setVisitChecklist((draft) => ({
+                                ...draft,
+                                [key]: event.target.checked,
+                              }))
+                            }
+                          />
+                          <span>
+                            {visitChecklistLabels[key as keyof VisitChecklist]}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void saveVisit()}
+                      className="mt-4 rounded-2xl bg-[#0f766e] px-5 py-3 text-sm font-medium text-white"
+                    >
+                      บันทึกการเยี่ยมครั้งนี้
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {selectedVisits.length ? (
+                      selectedVisits.map((visit) => {
+                        const { patientCardPhotos, followUpPhotos } =
+                          splitVisitPhotos(visit.photos);
+                        return (
+                          <div
+                            key={visit.id}
+                            className="rounded-[1.4rem] border border-[#e2edf4] p-4"
+                          >
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <div className="font-medium text-[#123047]">
+                                  เยี่ยมวันที่ {formatDate(visit.visitDate)}
+                                </div>
+                                <div className="text-xs text-[#6f8190]">
+                                  โดย {visit.visitorName} · Authen{" "}
+                                  {visit.authenCode || "-"}
+                                </div>
+                              </div>
+                              <span className="inline-flex rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#123047]">
+                                {visit.photos.length} รูป
+                              </span>
+                            </div>
+                            <div className="mt-3 text-sm leading-7 text-[#123047]">
+                              {visit.symptoms}
+                            </div>
+                            <div className="mt-2 text-sm leading-7 text-[#5f7486]">
+                              {visit.note}
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {Object.entries(visit.checklist)
+                                .filter(([, active]) => active)
+                                .map(([key]) => (
+                                  <span
+                                    key={key}
+                                    className="inline-flex rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#123047]"
+                                  >
+                                    {
+                                      visitChecklistLabels[
+                                        key as keyof VisitChecklist
+                                      ]
+                                    }
+                                  </span>
+                                ))}
+                            </div>
+                            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                              <div className="rounded-2xl bg-[#f7fbfd] p-3">
+                                <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                                  รูปบัตรคู่กับคนไข้
+                                </div>
+                                <div className="mt-3 flex flex-wrap gap-3">
+                                  {patientCardPhotos.length ? (
+                                    patientCardPhotos.map((photo) => (
+                                      <Image
+                                        key={photo.id}
+                                        src={photo.url}
+                                        alt={photo.fileName}
+                                        width={80}
+                                        height={80}
+                                        unoptimized
+                                        className="h-20 w-20 rounded-2xl object-cover"
+                                      />
+                                    ))
+                                  ) : (
+                                    <div className="text-sm text-[#6f8190]">
+                                      ไม่มีรูปในหมวดนี้
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="rounded-2xl bg-[#f7fbfd] p-3">
+                                <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                                  รูปติดตามอาการคนไข้
+                                </div>
+                                <div className="mt-3 flex flex-wrap gap-3">
+                                  {followUpPhotos.length ? (
+                                    followUpPhotos.map((photo) => (
+                                      <Image
+                                        key={photo.id}
+                                        src={photo.url}
+                                        alt={photo.fileName}
+                                        width={80}
+                                        height={80}
+                                        unoptimized
+                                        className="h-20 w-20 rounded-2xl object-cover"
+                                      />
+                                    ))
+                                  ) : (
+                                    <div className="text-sm text-[#6f8190]">
+                                      ไม่มีรูปในหมวดนี้
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
                     ) : (
                       <div className="text-sm text-[#6f8190]">
-                        ยังไม่มีคอมเมนต์
+                        ยังไม่มีประวัติการเยี่ยม
                       </div>
                     )}
                   </div>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </Box>
-      </section>
+                  <div className="rounded-[1.5rem] bg-[#f7fbfd] p-5">
+                    <div className="grid gap-3 sm:grid-cols-[0.8fr_0.2fr]">
+                      <textarea
+                        value={commentDraft}
+                        onChange={(event) => setCommentDraft(event.target.value)}
+                        rows={4}
+                        placeholder="ข้อความประสานงาน"
+                        className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                      />
+                      <div className="space-y-3">
+                        <select
+                          value={commentAudience}
+                          onChange={(event) =>
+                            setCommentAudience(
+                              event.target.value as CommentAudience,
+                            )
+                          }
+                          className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                        >
+                          <option value="all">ทุกฝ่าย</option>
+                          <option value="hospital">ให้โรงพยาบาลเห็น</option>
+                          <option value="unit">ให้หน่วยเห็น</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={saveComment}
+                          className="w-full rounded-2xl bg-[#123047] px-5 py-3 text-sm font-medium text-white"
+                        >
+                          ส่งข้อความ
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {selectedComments.length ? (
+                        selectedComments.map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="rounded-[1.4rem] bg-white p-4"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <div className="font-medium text-[#123047]">
+                                  {comment.authorName}
+                                </div>
+                                <div className="text-xs text-[#6f8190]">
+                                  {formatDateTime(comment.createdAt)}
+                                </div>
+                              </div>
+                              <span className="inline-flex rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-3 py-1 text-xs text-[#123047]">
+                                {formatAudience(comment.audience)}
+                              </span>
+                            </div>
+                            <div className="mt-3 text-sm leading-7 text-[#123047]">
+                              {comment.body}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-[#6f8190]">
+                          ยังไม่มีคอมเมนต์
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </Box>
+        </section>
+      ) : null}
 
-      <Box
-        title="ผู้ใช้งานและ STM/REP"
-        note="ตั้งชื่อผู้ใช้พื้นฐาน และนำเข้าข้อมูลการเงินเพื่อแบ่งยอดให้แต่ละหน่วย"
-      >
+      {!isUnitNurse && !isUnitManager ? (
+        <Box
+          title="ผู้ใช้งานและ STM/REP"
+          note="ตั้งชื่อผู้ใช้พื้นฐาน และนำเข้าข้อมูลการเงินเพื่อแบ่งยอดให้แต่ละหน่วย"
+        >
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[1.5rem] bg-[#f7fbfd] p-5">
             <div className="text-sm font-medium text-[#123047]">
@@ -2578,7 +3580,8 @@ export function PalliativeWorkspace({
             ) : null}
           </div>
         </div>
-      </Box>
+        </Box>
+      ) : null}
 
       <LoadingProgressOverlay
         active={working}

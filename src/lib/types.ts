@@ -154,6 +154,7 @@ export interface PalliativePatient {
   assignedUnitId: string;
   assignedUnitName: string;
   assignedUnitKind: UnitKind;
+  insuranceGroup?: string;
   primaryDxCode: string;
   primaryDxName: string;
   careStatus: CareStatus;
@@ -214,6 +215,7 @@ export interface HosCandidate {
   unitId: string;
   clinicName: string;
   clinicShortName: string;
+  insuranceGroup?: string;
   primaryDxCode: string;
   primaryDxName: string;
   phone?: string;
@@ -235,6 +237,7 @@ export type CandidateDxGroup =
   | "all"
   | "cancer"
   | "stroke-neuro"
+  | "dementia"
   | "ckd"
   | "copd"
   | "hiv"

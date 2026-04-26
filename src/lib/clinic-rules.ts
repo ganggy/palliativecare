@@ -190,6 +190,7 @@ SELECT
   '${rule.unitId}' AS unitId,
   '${rule.clinicName}' AS clinicName,
   '${rule.shortName}' AS clinicShortName,
+  COALESCE(pt.hipdata_code, '') AS pttype,
   COALESCE(
     (
       SELECT SUBSTRING_INDEX(
@@ -228,6 +229,7 @@ SELECT
   ${requiredCodeSql("o.vn", "CONS01")} AS cons01
 FROM ovst o
   INNER JOIN vn_stat vs ON vs.vn = o.vn
+  LEFT JOIN pttype pt ON pt.pttype = vs.pttype
   LEFT JOIN patient p ON p.hn = o.hn
   LEFT JOIN thaiaddress va ON va.addressid = vs.aid
   LEFT JOIN thaiaddress t3
@@ -252,6 +254,7 @@ SELECT
   '${rule.unitId}' AS unitId,
   '${rule.clinicName}' AS clinicName,
   '${rule.shortName}' AS clinicShortName,
+  COALESCE(pt.hipdata_code, '') AS pttype,
   COALESCE(
     (
       SELECT SUBSTRING_INDEX(
@@ -309,6 +312,7 @@ FROM (
 ) latest
   INNER JOIN ovst o ON o.vn = latest.latestVn
   INNER JOIN vn_stat vs ON vs.vn = o.vn
+  LEFT JOIN pttype pt ON pt.pttype = vs.pttype
   LEFT JOIN patient p ON p.hn = o.hn
   LEFT JOIN thaiaddress va ON va.addressid = vs.aid
   LEFT JOIN thaiaddress t3

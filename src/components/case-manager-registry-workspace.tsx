@@ -46,6 +46,13 @@ function statusClass(status: PalliativePatient["careStatus"]) {
   return "border-[#d6e0e7] bg-[#f6f9fb] text-[#6f8190]";
 }
 
+function visitCountForPatient(patient: PalliativePatient, visits: AppSnapshot["visits"]) {
+  const localVisitCount = visits.filter(
+    (visit) => visit.patientId === patient.id && visit.status === "completed",
+  ).length;
+  return Math.max(localVisitCount, patient.historicalVisitDates?.length ?? 0);
+}
+
 async function requestJson(url: string, init?: RequestInit) {
   const response = await fetch(url, {
     ...init,
@@ -199,7 +206,38 @@ export function CaseManagerRegistryWorkspace({
       );
   }, [snapshot.patients, search, statusFilter, unitFilter]);
 
+  const registryStats = useMemo(() => {
+    const scopedPatients = snapshot.patients.filter((patient) =>
+      unitFilter === "all" ? true : patient.assignedUnitId === unitFilter,
+    );
+    const inProgress = scopedPatients.filter((patient) =>
+      ["registered", "scheduled", "active"].includes(patient.careStatus),
+    );
+    const completed = scopedPatients.filter(
+      (patient) => patient.careStatus === "completed",
+    );
+    const dueSoon = inProgress.filter((patient) => Boolean(patient.nextVisitAt));
+    const totalVisits = scopedPatients.reduce(
+      (sum, patient) => sum + visitCountForPatient(patient, snapshot.visits),
+      0,
+    );
+
+    return {
+      total: scopedPatients.length,
+      inProgress: inProgress.length,
+      completed: completed.length,
+      dueSoon: dueSoon.length,
+      totalVisits,
+    };
+  }, [snapshot.patients, snapshot.visits, unitFilter]);
+
   const selectedPatient = patients.find((patient) => patient.id === selectedPatientId);
+  const activeRegistryLabel =
+    statusFilter === "completed"
+      ? "คนไข้ที่เยี่ยมครบแล้ว"
+      : statusFilter === "in_progress"
+        ? "คนไข้ที่ยังไม่ครบ 6 ครั้ง"
+        : "คนไข้ทั้งหมด";
 
   const refresh = async (preferredId?: number | null) => {
     const nextSnapshot = (await requestJson("/api/app")) as AppSnapshot;
@@ -483,6 +521,66 @@ export function CaseManagerRegistryWorkspace({
         </div>
       </header>
 
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {[
+          {
+            label: "ทะเบียนทั้งหมด",
+            value: registryStats.total,
+            detail: "รายในขอบเขตที่เลือก",
+            filter: "all" as StatusFilter,
+            className:
+              "rounded-[1.5rem] border border-[#dce9ef] bg-gradient-to-br from-[#ffffff] to-[#f4fbfd] p-5 text-left shadow-[0_16px_42px_rgba(8,33,51,0.07)]",
+          },
+          {
+            label: "ยังไม่ครบ 6 ครั้ง",
+            value: registryStats.inProgress,
+            detail: "กำลังเยี่ยม / ต้องติดตามต่อ",
+            filter: "in_progress" as StatusFilter,
+            className:
+              "rounded-[1.5rem] border border-[#dce9ef] bg-gradient-to-br from-[#effaf8] to-[#ffffff] p-5 text-left shadow-[0_16px_42px_rgba(8,33,51,0.07)]",
+          },
+          {
+            label: "ครบแล้ว",
+            value: registryStats.completed,
+            detail: "พร้อมตรวจสอบการเบิก",
+            filter: "completed" as StatusFilter,
+            className:
+              "rounded-[1.5rem] border border-[#dce9ef] bg-gradient-to-br from-[#f1fbf4] to-[#ffffff] p-5 text-left shadow-[0_16px_42px_rgba(8,33,51,0.07)]",
+          },
+          {
+            label: "มีวันนัด",
+            value: registryStats.dueSoon,
+            detail: "รายการที่ต้องติดตามต่อ",
+            filter: "in_progress" as StatusFilter,
+            className:
+              "rounded-[1.5rem] border border-[#dce9ef] bg-gradient-to-br from-[#fff8e7] to-[#ffffff] p-5 shadow-[0_16px_42px_rgba(8,33,51,0.07)]",
+          },
+          {
+            label: "จำนวนเยี่ยมสะสม",
+            value: registryStats.totalVisits,
+            detail: "ครั้งจากทะเบียนและ HOSxP",
+            filter: "all" as StatusFilter,
+            className:
+              "rounded-[1.5rem] border border-[#dce9ef] bg-gradient-to-br from-[#eef5ff] to-[#ffffff] p-5 shadow-[0_16px_42px_rgba(8,33,51,0.07)]",
+          },
+        ].map((card) => (
+          <button
+            key={card.label}
+            type="button"
+            onClick={() => setStatusFilter(card.filter)}
+            className={card.className}
+          >
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6f8190]">
+              {card.label}
+            </div>
+            <div className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#123047]">
+              {card.value}
+            </div>
+            <div className="mt-1 text-xs text-[#6f8190]">{card.detail}</div>
+          </button>
+        ))}
+      </section>
+
       <section className="rounded-[1.8rem] border border-[rgba(20,55,84,0.12)] bg-white p-5 shadow-[0_20px_50px_rgba(8,33,51,0.08)]">
         <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr]">
           <div>
@@ -511,11 +609,11 @@ export function CaseManagerRegistryWorkspace({
               className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
             >
               <option value="all">ทั้งหมด</option>
-              <option value="in_progress">กำลังเยี่ยมทั้งหมด</option>
+              <option value="in_progress">ยังไม่ครบ 6 ครั้ง</option>
               <option value="registered">ลงทะเบียนแล้ว</option>
               <option value="scheduled">นัดเยี่ยม</option>
               <option value="active">กำลังติดตาม</option>
-              <option value="completed">ครบเกณฑ์</option>
+              <option value="completed">ครบแล้ว</option>
               <option value="cancelled">ยกเลิก</option>
               <option value="deceased">เสียชีวิต</option>
             </select>
@@ -538,11 +636,74 @@ export function CaseManagerRegistryWorkspace({
             </select>
           </div>
         </div>
+        <div className="mt-4 rounded-[1.4rem] border border-[#dce9ef] bg-[#f8fcfe] p-2">
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              {
+                label: "ทั้งหมด",
+                helper: "ดูรวมทุกสถานะ",
+                value: "all" as StatusFilter,
+                count: registryStats.total,
+              },
+              {
+                label: "ยังไม่ครบ 6 ครั้ง",
+                helper: "เคสที่ยังต้องติดตามต่อ",
+                value: "in_progress" as StatusFilter,
+                count: registryStats.inProgress,
+              },
+              {
+                label: "ครบแล้ว",
+                helper: "เคสที่ครบตามเกณฑ์",
+                value: "completed" as StatusFilter,
+                count: registryStats.completed,
+              },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setStatusFilter(tab.value)}
+                className={`rounded-[1.1rem] px-4 py-3 text-left ${
+                  statusFilter === tab.value
+                    ? "bg-[#123047] text-white shadow-[0_14px_30px_rgba(18,48,71,0.18)]"
+                    : "bg-white text-[#123047]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold">{tab.label}</span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs ${
+                      statusFilter === tab.value
+                        ? "bg-white/15 text-white"
+                        : "bg-[#eef6fb] text-[#446075]"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </div>
+                <div
+                  className={`mt-1 text-xs ${
+                    statusFilter === tab.value ? "text-white/75" : "text-[#6f8190]"
+                  }`}
+                >
+                  {tab.helper}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="rounded-[1.8rem] border border-[rgba(20,55,84,0.12)] bg-white p-5 shadow-[0_20px_50px_rgba(8,33,51,0.08)]">
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div>
+            <div className="mb-3">
+              <div className="text-lg font-semibold text-[#123047]">
+                {activeRegistryLabel}
+              </div>
+              <div className="text-sm text-[#6f8190]">
+                แยกกลุ่มคนไข้ครบเกณฑ์และยังไม่ครบ เพื่อจัดการต่อได้ชัดเจน
+              </div>
+            </div>
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <input
                 value={search}
@@ -562,6 +723,7 @@ export function CaseManagerRegistryWorkspace({
                       <th className="px-4 py-4">ผู้ป่วย</th>
                       <th className="px-4 py-4">Dx</th>
                       <th className="px-4 py-4">หน่วย</th>
+                      <th className="px-4 py-4">เยี่ยมครบ</th>
                       <th className="px-4 py-4">สถานะ</th>
                       <th className="px-4 py-4">นัดเยี่ยม</th>
                     </tr>
@@ -583,6 +745,11 @@ export function CaseManagerRegistryWorkspace({
                           <td className="px-4 py-4 text-[#123047]">{patient.primaryDxCode}</td>
                           <td className="px-4 py-4 text-[#123047]">{patient.assignedUnitName}</td>
                           <td className="px-4 py-4">
+                            <span className="inline-flex rounded-full border border-[#dbe7ef] bg-white px-3 py-1 text-xs font-medium text-[#123047]">
+                              {visitCountForPatient(patient, snapshot.visits)} / 6
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
                             <span
                               className={`inline-flex rounded-full border px-3 py-1 text-xs ${statusClass(patient.careStatus)}`}
                             >
@@ -594,7 +761,7 @@ export function CaseManagerRegistryWorkspace({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-[#6f8190]">
+                        <td colSpan={6} className="px-4 py-8 text-center text-[#6f8190]">
                           ไม่พบข้อมูลคนไข้ตามเงื่อนไขที่เลือก
                         </td>
                       </tr>

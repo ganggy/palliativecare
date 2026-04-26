@@ -1,0 +1,7 @@
+extends: existence
+message: Use "และ" when referring to Z51.5 and Z71.8 as a paired requirement.
+level: error
+scope: text
+tokens:
+  - 'Z51\.5\s*(?:/|หรือ)\s*Z71\.8'
+  - 'Z71\.8\s*(?:/|หรือ)\s*Z51\.5'

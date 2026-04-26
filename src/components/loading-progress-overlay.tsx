@@ -57,10 +57,20 @@ export function LoadingProgressOverlay({
   if (!visible) return null;
 
   return (
-    <div className="pointer-events-none fixed bottom-5 right-5 z-[90] w-[min(92vw,360px)] rounded-3xl border border-[#b9d8e8] bg-[linear-gradient(140deg,#f8fdff_0%,#eef7fc_50%,#e6f2f8_100%)] p-4 shadow-[0_20px_50px_rgba(8,33,51,0.2)] backdrop-blur">
+    <div className="pointer-events-none fixed bottom-5 right-5 z-[90] w-[min(92vw,390px)] rounded-[1.6rem] border border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.96)_0%,rgba(239,249,250,0.94)_48%,rgba(226,241,247,0.96)_100%)] p-4 shadow-[0_24px_70px_rgba(8,33,51,0.22)] backdrop-blur-xl">
       <div className="flex items-start gap-3">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#2f6f9740] bg-white">
-          <div className="text-base font-semibold text-[#123047]">{Math.round(progress)}%</div>
+        <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#2f6f9740] bg-white shadow-[inset_0_0_0_6px_rgba(15,118,110,0.08)]">
+          <div
+            className="absolute inset-1 rounded-full"
+            style={{
+              background: `conic-gradient(#0f766e ${progress * 3.6}deg, #d7eaf4 0deg)`,
+              mask: "radial-gradient(circle, transparent 54%, #000 56%)",
+              WebkitMask: "radial-gradient(circle, transparent 54%, #000 56%)",
+            }}
+          />
+          <div className="relative text-base font-semibold text-[#123047]">
+            {Math.round(progress)}%
+          </div>
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-[#123047]">{title}</div>

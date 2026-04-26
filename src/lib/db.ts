@@ -7,15 +7,23 @@ const poolCache = new Map<DbTarget, Pool>();
 function readConfig(target: DbTarget) {
   const prefix = target === "hos" ? "HOS" : "PALLIATIVE";
   const host = process.env[`${prefix}_DB_HOST`] ?? process.env.DB_HOST;
+  const portText = process.env[`${prefix}_DB_PORT`] ?? process.env.DB_PORT;
   const user = process.env[`${prefix}_DB_USER`] ?? process.env.DB_USER;
   const password = process.env[`${prefix}_DB_PASSWORD`] ?? process.env.DB_PASSWORD;
   const database = process.env[`${prefix}_DB_NAME`] ?? (target === "hos" ? "hos" : "palliative");
+  const port = portText ? Number.parseInt(portText, 10) : undefined;
 
   if (!host || !user || password === undefined) {
     return null;
   }
 
-  return { host, user, password, database };
+  return {
+    host,
+    port: Number.isFinite(port) ? port : undefined,
+    user,
+    password,
+    database,
+  };
 }
 
 export function isDbConfigured(target: DbTarget): boolean {
@@ -35,6 +43,7 @@ export function getPool(target: DbTarget): Pool {
     ...config,
     waitForConnections: true,
     connectionLimit: 8,
+    connectTimeout: 10000,
     namedPlaceholders: true,
     charset: "utf8mb4",
     timezone: "+07:00",

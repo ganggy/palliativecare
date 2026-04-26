@@ -19,7 +19,7 @@ function candidateModeLabel(mode: CandidateFilterMode) {
   if (mode === "missing_both_z")
     return "ยังไม่เคยลงทั้ง Z51.5 และ Z71.8";
   if (mode === "missing_any_z")
-    return "ยังไม่เคยลง Z51.5 หรือ Z71.8 อย่างใดอย่างหนึ่ง";
+    return "ยังไม่เคยลง Z51.5 และ Z71.8 ให้ครบ";
   if (mode === "z_done_but_visit_incomplete")
     return `ลง Z ครบแล้ว แต่เยี่ยมครบเกณฑ์ยังไม่ถึง ${REQUIRED_COMPLETE_VISITS} ครั้ง`;
   return "ทุกเคสเข้าเกณฑ์";
@@ -28,14 +28,20 @@ function candidateModeLabel(mode: CandidateFilterMode) {
 function dxGroupLabel(group: CandidateDxGroup) {
   if (group === "cancer") return "มะเร็ง/เนื้องอก";
   if (group === "stroke-neuro") return "Stroke/ระบบประสาท";
+  if (group === "dementia") return "Dementia/สมองเสื่อม";
   if (group === "ckd") return "ไตวายระยะท้าย (N18.5)";
   if (group === "copd") return "COPD";
   if (group === "hiv") return "HIV/AIDS";
   if (group === "liver") return "ตับล้มเหลว";
   if (group === "heart") return "หัวใจล้มเหลว";
-  if (group === "palliative-z") return "รหัส Z51.5 / Z71.8";
+  if (group === "palliative-z") return "รหัส Z51.5 และ Z71.8";
   if (group === "other") return "กลุ่มอื่น";
   return "ทุกกลุ่มโรค";
+}
+
+function insuranceGroupLabel(value?: string) {
+  const normalized = value?.trim().toUpperCase();
+  return normalized || "สิทธิ์ไม่ระบุ";
 }
 
 function claimChecklistItems(checklist: HosCandidate["claimChecklist"]) {
@@ -110,7 +116,7 @@ export function CaseManagerCandidateWorkspace({
   const [activeUserId, setActiveUserId] = useState(defaultUser?.id ?? "");
   const [candidateClinic, setCandidateClinic] = useState("all");
   const [candidateMode, setCandidateMode] =
-    useState<CandidateFilterMode>("missing_both_z");
+    useState<CandidateFilterMode>("missing_any_z");
   const [candidateDxGroup, setCandidateDxGroup] =
     useState<CandidateDxGroup>("all");
   const [candidateSearch, setCandidateSearch] = useState("");
@@ -125,9 +131,6 @@ export function CaseManagerCandidateWorkspace({
   >([]);
   const [selectedHistoryVn, setSelectedHistoryVn] = useState("");
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [registerUnitId, setRegisterUnitId] = useState(
-    initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
-  );
   const [registerDate, setRegisterDate] = useState(initialSnapshot.currentDate);
   const [registerNote, setRegisterNote] = useState(
     "มอบหมายเยี่ยมบ้านจากหน้า Case Manager",
@@ -163,6 +166,10 @@ export function CaseManagerCandidateWorkspace({
   const selectedCandidate = candidateRows.find(
     (candidate) => candidateRowKey(candidate) === selectedCandidateKey,
   );
+  const selectedUnitName =
+    snapshot.units.find((unit) => unit.id === selectedCandidate?.unitId)?.name ??
+    selectedCandidate?.clinicName ??
+    "-";
   const selectedHistory = candidateHistoryRows.find(
     (item) => item.vn === selectedHistoryVn,
   );
@@ -274,7 +281,6 @@ export function CaseManagerCandidateWorkspace({
           finalRows[0] ? candidateRowKey(finalRows[0]) : "",
         );
         if (finalRows[0]) {
-          setRegisterUnitId(finalRows[0].unitId);
           setRegisterDate(initialSnapshot.currentDate);
           await loadCandidateHistory(finalRows[0].hn);
         } else {
@@ -312,7 +318,7 @@ export function CaseManagerCandidateWorkspace({
         body: JSON.stringify({
           candidate: selectedCandidate,
           nextVisitAt: registerDate,
-          assignedUnitId: registerUnitId,
+          assignedUnitId: selectedCandidate.unitId,
           note: registerNote,
           userId: currentUser.id,
         }),
@@ -414,7 +420,6 @@ export function CaseManagerCandidateWorkspace({
           const nextCandidate = remainingRows[0];
           setSelectedCandidateKey(nextCandidate ? candidateRowKey(nextCandidate) : "");
           if (nextCandidate) {
-            setRegisterUnitId(nextCandidate.unitId);
             await loadCandidateHistory(nextCandidate.hn);
           } else {
             setCandidateHistoryRows([]);
@@ -500,11 +505,11 @@ export function CaseManagerCandidateWorkspace({
               หน้าคัดเลือกและลงทะเบียนคนไข้เข้าเกณฑ์
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/85 sm:text-base">
-              ใช้คัดเลือกจากโรคเป้าหมาย และโฟกัสรายที่ยังไม่ลง Z51.5 / Z71.8
-              ก่อนส่งต่อเยี่ยมบ้าน
+              ใช้คัดเลือกจากโรคเป้าหมาย โฟกัสรายที่ยังไม่ลง Z51.5 และ Z71.8
+              และรับเฉพาะสิทธิ์ UCS / WEL ก่อนส่งต่อเยี่ยมบ้าน
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={() => void refresh()}
@@ -617,7 +622,7 @@ export function CaseManagerCandidateWorkspace({
                   ยังไม่เคยลงทั้ง Z51.5 และ Z71.8
                 </option>
                 <option value="missing_any_z">
-                  ยังไม่เคยลง Z51.5 หรือ Z71.8 อย่างใดอย่างหนึ่ง
+                  ยังไม่เคยลง Z51.5 และ Z71.8 ให้ครบ
                 </option>
                 <option value="z_done_but_visit_incomplete">
                   ลง Z ครบแล้ว แต่เยี่ยมครบเกณฑ์ยังไม่ถึง {REQUIRED_COMPLETE_VISITS} ครั้ง
@@ -634,12 +639,13 @@ export function CaseManagerCandidateWorkspace({
                 <option value="all">ทุกกลุ่มโรค</option>
                 <option value="cancer">มะเร็ง/เนื้องอก</option>
                 <option value="stroke-neuro">Stroke/ระบบประสาท</option>
+                <option value="dementia">Dementia/สมองเสื่อม</option>
                 <option value="ckd">ไตวายระยะท้าย (N18.5)</option>
                 <option value="copd">COPD</option>
                 <option value="hiv">HIV/AIDS</option>
                 <option value="liver">ตับล้มเหลว</option>
                 <option value="heart">หัวใจล้มเหลว</option>
-                <option value="palliative-z">รหัส Z51.5 / Z71.8</option>
+                <option value="palliative-z">รหัส Z51.5 และ Z71.8</option>
                 <option value="other">กลุ่มอื่น</option>
               </select>
               <button
@@ -709,12 +715,15 @@ export function CaseManagerCandidateWorkspace({
               <span className="text-sm text-[#123047]">
                 เลือกแล้ว <strong>{selectedCandidateKeys.length}</strong> รายการ
               </span>
-              <input
-                type="date"
-                value={registerDate}
-                onChange={(event) => setRegisterDate(event.target.value)}
-                className="rounded-2xl border border-[#d9e5ec] px-4 py-2 text-sm outline-none"
-              />
+              <label className="flex flex-col gap-1 text-xs text-[#5f7486]">
+                <span>วันนัดเยี่ยมแรก / วันลงทะเบียนเคส</span>
+                <input
+                  type="date"
+                  value={registerDate}
+                  onChange={(event) => setRegisterDate(event.target.value)}
+                  className="rounded-2xl border border-[#d9e5ec] px-4 py-2 text-sm outline-none"
+                />
+              </label>
               <input
                 value={registerNote}
                 onChange={(event) => setRegisterNote(event.target.value)}
@@ -749,7 +758,7 @@ export function CaseManagerCandidateWorkspace({
                       <th className="px-4 py-4">หน่วย</th>
                       <th className="px-4 py-4">Dx</th>
                       <th className="px-4 py-4">เคยเยี่ยมครบเกณฑ์แล้ว</th>
-                      <th className="px-4 py-4">Z51.5 / Z71.8</th>
+              <th className="px-4 py-4">Z51.5 และ Z71.8</th>
                       <th className="px-4 py-4">ความพร้อม</th>
                     </tr>
                   </thead>
@@ -761,11 +770,10 @@ export function CaseManagerCandidateWorkspace({
                           <tr
                             key={key}
                             className={`cursor-pointer border-t border-[#edf3f7] ${selectedCandidateKey === key ? "bg-[#eef8f8]" : "hover:bg-[#f8fbfd]"}`}
-                            onClick={() => {
-                              setSelectedCandidateKey(key);
-                              setRegisterUnitId(candidate.unitId);
-                              void loadCandidateHistory(candidate.hn);
-                            }}
+                          onClick={() => {
+                            setSelectedCandidateKey(key);
+                            void loadCandidateHistory(candidate.hn);
+                          }}
                           >
                             <td className="px-4 py-4">
                               <input
@@ -830,6 +838,9 @@ export function CaseManagerCandidateWorkspace({
                                 {candidate.claimChecklist.readyForClaim
                                   ? "ครบพร้อมเบิก"
                                   : "ยังไม่ครบ"}
+                              </span>
+                              <span className="inline-flex rounded-full border border-[#d9e5ec] bg-white px-3 py-1 text-xs text-[#123047]">
+                                สิทธิ์ {insuranceGroupLabel(candidate.insuranceGroup)}
                               </span>
                             </td>
                           </tr>
@@ -897,6 +908,9 @@ export function CaseManagerCandidateWorkspace({
                   <div className="mt-2 text-sm text-[#6f8190]">
                     HN {selectedCandidate.hn} · {selectedCandidate.primaryDxCode}
                   </div>
+                  <div className="mt-2 inline-flex rounded-full border border-[#d9e5ec] bg-white px-3 py-1 text-xs font-medium text-[#123047]">
+                    สิทธิ์ {insuranceGroupLabel(selectedCandidate.insuranceGroup)}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {claimChecklistItems(selectedCandidate.claimChecklist).map(
@@ -910,25 +924,21 @@ export function CaseManagerCandidateWorkspace({
                     ),
                   )}
                 </div>
-                <select
-                  value={registerUnitId}
-                  onChange={(event) => setRegisterUnitId(event.target.value)}
-                  className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                >
-                  {snapshot.units
-                    .filter((unit) => unit.kind !== "hospital")
-                    .map((unit) => (
-                      <option key={unit.id} value={unit.id}>
-                        {unit.name}
-                      </option>
-                    ))}
-                </select>
-                <input
-                  type="date"
-                  value={registerDate}
-                  onChange={(event) => setRegisterDate(event.target.value)}
-                  className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                />
+                <div className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3">
+                  <div className="text-xs text-[#5f7486]">สถานบริการตามที่อยู่</div>
+                  <div className="mt-1 text-sm font-medium text-[#123047]">
+                    {selectedUnitName}
+                  </div>
+                </div>
+                <label className="flex flex-col gap-1 text-xs text-[#5f7486]">
+                  <span>วันนัดเยี่ยมแรก / วันลงทะเบียนเคส</span>
+                  <input
+                    type="date"
+                    value={registerDate}
+                    onChange={(event) => setRegisterDate(event.target.value)}
+                    className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                  />
+                </label>
                 <textarea
                   value={registerNote}
                   onChange={(event) => setRegisterNote(event.target.value)}

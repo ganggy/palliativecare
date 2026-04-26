@@ -74,6 +74,7 @@ interface CandidateRow {
   unitId?: unknown;
   clinicName?: unknown;
   clinicShortName?: unknown;
+  pttype?: unknown;
   pdx?: unknown;
   primaryDxName?: unknown;
   TelNo?: unknown;
@@ -819,6 +820,21 @@ function bool(value: unknown): boolean {
   return value === true || value === 1 || value === "1" || value === "Y";
 }
 
+function normalizeInsuranceGroup(value?: string): string {
+  return (value ?? "").toUpperCase().replaceAll(/\s+/g, "").trim();
+}
+
+function hasAllowedInsuranceGroup(value?: string): boolean {
+  const normalized = normalizeInsuranceGroup(value);
+  return normalized === "UCS" || normalized === "WEL";
+}
+
+function matchesCandidateInsuranceGroup(value?: string): boolean {
+  const normalized = normalizeInsuranceGroup(value);
+  if (!normalized) return true;
+  return hasAllowedInsuranceGroup(normalized);
+}
+
 function matchesCandidateMode(
   candidate: Pick<HosCandidate, "claimChecklist" | "serviceCount">,
   mode: CandidateFilterMode,
@@ -983,6 +999,7 @@ export async function getHosCandidates(
         unitId: patient.assignedUnitId,
         clinicName: patient.assignedUnitName,
         clinicShortName: patient.assignedUnitName,
+        insuranceGroup: patient.insuranceGroup,
         primaryDxCode: patient.primaryDxCode,
         primaryDxName: patient.primaryDxName,
         phone: patient.phone,
@@ -1007,7 +1024,8 @@ export async function getHosCandidates(
             .includes(searchTerm.toLowerCase()),
       )
       .filter((row) => matchesCandidateMode(row, candidateMode))
-      .filter((row) => matchesCandidateDxGroup(row.primaryDxCode, dxGroup));
+      .filter((row) => matchesCandidateDxGroup(row.primaryDxCode, dxGroup))
+      .filter((row) => matchesCandidateInsuranceGroup(row.insuranceGroup));
   }
 
   const pool = getPool("hos");
@@ -1029,6 +1047,7 @@ export async function getHosCandidates(
     const [rows] = await pool.query(sql, params);
     for (const row of rows as CandidateRow[]) {
       const primaryDxCode = String(row.pdx ?? "");
+      const insuranceGroup = String(row.pttype ?? "").trim() || undefined;
       const checklist = buildClaimChecklist({
         diagZ515: bool(row.diagZ515),
         diagZ718: bool(row.diagZ718),
@@ -1050,6 +1069,7 @@ export async function getHosCandidates(
         unitId: String(row.unitId ?? rule.unitId),
         clinicName: String(row.clinicName ?? rule.clinicName),
         clinicShortName: String(row.clinicShortName ?? rule.shortName),
+        insuranceGroup,
         primaryDxCode,
         primaryDxName: String(row.primaryDxName ?? primaryDxCode),
         phone: typeof row.TelNo === "string" ? row.TelNo : undefined,
@@ -1070,26 +1090,30 @@ export async function getHosCandidates(
 
       const keyword = searchTerm.trim().toLowerCase();
       if (
-        !keyword ||
-        `${candidate.hn} ${candidate.cid} ${candidate.fullName} ${candidate.primaryDxCode}`
+        keyword &&
+        !`${candidate.hn} ${candidate.cid} ${candidate.fullName} ${candidate.primaryDxCode}`
           .toLowerCase()
           .includes(keyword)
       ) {
-        if (!matchesCandidateMode(candidate, candidateMode)) {
-          continue;
-        }
-        if (!matchesCandidateDxGroup(candidate.primaryDxCode, dxGroup)) {
-          continue;
-        }
-        if (
-          !includeRegistered &&
-          (registered.hnSet.has(candidate.hn) ||
-            registered.cidSet.has(candidate.cid))
-        ) {
-          continue;
-        }
-        candidates.push(candidate);
+        continue;
       }
+      if (!matchesCandidateMode(candidate, candidateMode)) {
+        continue;
+      }
+      if (!matchesCandidateDxGroup(candidate.primaryDxCode, dxGroup)) {
+        continue;
+      }
+      if (!hasAllowedInsuranceGroup(candidate.insuranceGroup)) {
+        continue;
+      }
+      if (
+        !includeRegistered &&
+        (registered.hnSet.has(candidate.hn) ||
+          registered.cidSet.has(candidate.cid))
+      ) {
+        continue;
+      }
+      candidates.push(candidate);
     }
   }
 
@@ -2029,6 +2053,9 @@ export async function registerHosCandidate(
     careStatus?: PalliativePatient["careStatus"];
   },
 ) {
+  if (isDbConfigured("hos") && !hasAllowedInsuranceGroup(candidate.insuranceGroup)) {
+    throw new Error("ต้องเป็นสิทธิ์ UCS หรือ WEL เท่านั้น");
+  }
   if (!isDbConfigured("palliative")) {
     return registerPatientFromCandidate(candidate, {
       ...input,

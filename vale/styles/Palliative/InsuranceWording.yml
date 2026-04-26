@@ -1,0 +1,5 @@
+extends: substitution
+message: Mention `pttype.hipdata_code` when describing UCS/WEL eligibility.
+level: warning
+swap:
+  "สิทธิ์ต้องเป็น\\s*`?UCS`?\\s*หรือ\\s*`?WEL`?": "สิทธิ์ต้องเป็น `UCS` หรือ `WEL` โดยอิง `pttype.hipdata_code`"

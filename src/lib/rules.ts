@@ -22,7 +22,7 @@ export function normalizeServiceCode(code?: string): string {
 
 export function buildPalliativeDiagnosisWhereSql(column = "dx.icd10"): string {
   const normalized = `UPPER(REPLACE(${column}, '.', ''))`;
-  return `${normalized} REGEXP '^(B2[0-4]|C|D[0-4]|I5|I6|J44|K704|K717|K72|N185|Z515|Z718)'`;
+  return `${normalized} REGEXP '^(B2[0-4]|C|D[0-4]|F03|I5|I6|J44|K704|K717|K72|K74|N185|Z515|Z718)'`;
 }
 
 export function buildPalliativeDiagnosisExistsSql(vnExpr = "o.vn"): string {
@@ -107,10 +107,12 @@ export function isPalliativeEligibleCode(code?: string): boolean {
     normalized === "I50" ||
     normalized === "N185" ||
     normalized === "J44" ||
+    normalized === "F03" ||
     /^B2[0-4]/.test(normalized) ||
     normalized === "K72" ||
     normalized === "K704" ||
     normalized === "K717" ||
+    normalized === "K74" ||
     normalized === "Z515" ||
     normalized === "Z718"
   );
@@ -140,8 +142,9 @@ export function describeEligibility(code?: string): string {
   if (normalized.startsWith("I6")) return "Stroke ที่ต้องดูแลต่อเนื่อง";
   if (normalized === "N185") return "CKD stage 5";
   if (normalized === "J44") return "COPD รุนแรง";
+  if (normalized === "F03") return "สมองเสื่อมระยะรุนแรง";
   if (normalized.startsWith("B2")) return "AIDS ระยะรุนแรง";
-  if (normalized.startsWith("K7")) return "ตับล้มเหลว";
+  if (normalized.startsWith("K7")) return "ตับล้มเหลว/ตับแข็ง";
   if (normalized === "I50") return "หัวใจล้มเหลว";
   if (normalized === "Z515") return "เข้าเกณฑ์ Palliative care";
   if (normalized === "Z718") return "มีแผน Advance Care Plan";
@@ -159,10 +162,16 @@ export function classifyCandidateDxGroup(code?: string): CandidateDxGroup {
     return "cancer";
   }
   if (normalized.startsWith("I6")) return "stroke-neuro";
+  if (normalized === "F03") return "dementia";
   if (normalized === "N185") return "ckd";
   if (normalized.startsWith("J44")) return "copd";
   if (normalized.startsWith("B2")) return "hiv";
-  if (normalized === "K72" || normalized === "K704" || normalized === "K717") {
+  if (
+    normalized === "K72" ||
+    normalized === "K704" ||
+    normalized === "K717" ||
+    normalized === "K74"
+  ) {
     return "liver";
   }
   if (normalized.startsWith("I50")) return "heart";
