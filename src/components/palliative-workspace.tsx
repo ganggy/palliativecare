@@ -51,6 +51,7 @@ type ImportFileOption = {
 };
 
 type NurseWorkspaceTab = "search" | "registry" | "visit" | "progress";
+type UserManagementTab = "members" | "approvals";
 
 type VisitPhotoCategory = "patient-card" | "follow-up";
 
@@ -198,6 +199,43 @@ const roleOptions: Array<{ value: UserRole; label: string }> = [
   { value: "unit_nurse", label: "พยาบาลหน่วย" },
 ];
 
+function getManageableRoleOptions(role?: UserRole) {
+  if (role === "hospital_admin") return roleOptions;
+  if (role === "hospital_case_manager") {
+    return roleOptions.filter(
+      (option) =>
+        option.value !== "hospital_admin" &&
+        option.value !== "hospital_case_manager",
+    );
+  }
+  return roleOptions.filter((option) => option.value === "unit_nurse");
+}
+
+function getSelfNavigationActions(role?: UserRole) {
+  if (role === "hospital_admin") {
+    return [
+      { href: "/case-manager", label: "ไปหน้า Case Manager" },
+      { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
+    ];
+  }
+  if (role === "hospital_case_manager") {
+    return [
+      { href: "/case-manager", label: "ไปหน้า Case Manager" },
+      { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
+    ];
+  }
+  if (role === "unit_manager") {
+    return [{ href: "/unit-overview", label: "ไปหน้าภาพรวมหน่วย" }];
+  }
+  if (role === "unit_nurse") {
+    return [{ href: "/nurse", label: "ไปหน้าพยาบาลหน่วย" }];
+  }
+  if (role === "hospital_pcu") {
+    return [{ href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" }];
+  }
+  return [];
+}
+
 async function requestJson(url: string, init?: RequestInit, authToken?: string) {
   const response = await fetch(url, {
     ...init,
@@ -247,6 +285,18 @@ async function filesToPayloadWithCaption(
 ) {
   const payload = await filesToPayload(files);
   return payload.map((item) => ({ ...item, caption }));
+}
+
+async function fileGroupsToPayloadWithCaption(
+  filesList: Array<FileList | null>,
+  caption: VisitPhotoCategory,
+) {
+  const groups = await Promise.all(
+    filesList
+      .filter((files): files is FileList => Boolean(files?.length))
+      .map((files) => filesToPayloadWithCaption(files, caption)),
+  );
+  return groups.flat();
 }
 
 function parseStmText(text: string, fallbackClaimMonth: string) {
@@ -384,6 +434,8 @@ export function PalliativeWorkspace({
     unitId: initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
     active: true,
   });
+  const [userManagementTab, setUserManagementTab] =
+    useState<UserManagementTab>("members");
 
   const refresh = async () => {
     const nextSnapshot = (await requestJson("/api/app", undefined, authToken)) as AppSnapshot;
@@ -413,9 +465,9 @@ export function PalliativeWorkspace({
   const [registrySearch, setRegistrySearch] = useState("");
   const [registryPage, setRegistryPage] = useState(1);
   const [pendingNursePatientId, setPendingNursePatientId] = useState<number | null>(null);
-  const [patientCardFiles, setPatientCardFiles] = useState<FileList | null>(null);
+  const [patientCardFiles, setPatientCardFiles] = useState<Array<FileList | null>>([null]);
   const [patientCardFileInputKey, setPatientCardFileInputKey] = useState(0);
-  const [followUpFiles, setFollowUpFiles] = useState<FileList | null>(null);
+  const [followUpFiles, setFollowUpFiles] = useState<Array<FileList | null>>([null]);
   const [followUpFileInputKey, setFollowUpFileInputKey] = useState(0);
   const visiblePatients = useMemo(
     () =>
@@ -565,6 +617,15 @@ export function PalliativeWorkspace({
     sessionUser?.role === "hospital_admin" ||
     sessionUser?.role === "hospital_case_manager";
   const isAdmin = sessionUser?.role === "hospital_admin";
+  const canManageUsers = canApproveUsers;
+  const manageableRoleOptions = useMemo(
+    () => getManageableRoleOptions(sessionUser?.role),
+    [sessionUser?.role],
+  );
+  const currentUserActions = useMemo(
+    () => getSelfNavigationActions(currentUser?.role),
+    [currentUser?.role],
+  );
   const selectableUsers = useMemo(() => {
     if (!sessionUser) return [];
     if (isAdmin) return snapshot.users;
@@ -723,6 +784,17 @@ export function PalliativeWorkspace({
         .catch(() => setPendingRequests([]));
     }
   }, [canApproveUsers, authToken, sessionUser]);
+
+  useEffect(() => {
+    if (!manageableRoleOptions.length) return;
+    if (manageableRoleOptions.some((option) => option.value === newUserDraft.role)) {
+      return;
+    }
+    setNewUserDraft((prev) => ({
+      ...prev,
+      role: manageableRoleOptions[0].value,
+    }));
+  }, [manageableRoleOptions, newUserDraft.role]);
 
   const signIn = () => {
     if (!loginUsername.trim() || !loginPassword.trim()) {
@@ -886,7 +958,7 @@ export function PalliativeWorkspace({
   };
 
   const createUserByAdminAction = () => {
-    if (!sessionUser || !authToken || !isAdmin) return;
+    if (!sessionUser || !authToken || !canManageUsers) return;
     if (
       !newUserDraft.username.trim() ||
       !newUserDraft.displayName.trim() ||
@@ -894,6 +966,10 @@ export function PalliativeWorkspace({
       !newUserDraft.unitId
     ) {
       setNotice("กรุณากรอกข้อมูลผู้ใช้ใหม่ให้ครบ");
+      return;
+    }
+    if (!manageableRoleOptions.some((option) => option.value === newUserDraft.role)) {
+      setNotice("สิทธิ์ของคุณไม่สามารถสร้าง role นี้ได้");
       return;
     }
     run(
@@ -921,7 +997,7 @@ export function PalliativeWorkspace({
   };
 
   const quickToggleUserActive = (targetUserId: string, active: boolean) => {
-    if (!sessionUser || !authToken || !isAdmin) return;
+    if (!sessionUser || !authToken || !canManageUsers) return;
     run(
       () =>
         requestJson(
@@ -941,7 +1017,7 @@ export function PalliativeWorkspace({
   };
 
   const removeUser = (targetUserId: string) => {
-    if (!sessionUser || !authToken || !isAdmin) return;
+    if (!sessionUser || !authToken || !canManageUsers) return;
     run(
       () =>
         requestJson(
@@ -980,8 +1056,8 @@ export function PalliativeWorkspace({
       note: "",
     });
     setVisitChecklist(defaultVisitChecklistState);
-    setPatientCardFiles(null);
-    setFollowUpFiles(null);
+    setPatientCardFiles([null]);
+    setFollowUpFiles([null]);
     setPatientCardFileInputKey((value) => value + 1);
     setFollowUpFileInputKey((value) => value + 1);
   };
@@ -1118,20 +1194,20 @@ export function PalliativeWorkspace({
       setNotice("กรุณาบันทึกอาการติดตาม");
       return;
     }
-    if (!patientCardFiles?.length) {
+    if (!patientCardFiles.some((files) => files?.length)) {
       setNotice("กรุณาแนบรูปบัตรคู่กับคนไข้");
       return;
     }
-    if (!followUpFiles?.length) {
+    if (!followUpFiles.some((files) => files?.length)) {
       setNotice("กรุณาแนบรูปติดตามอาการคนไข้");
       return;
     }
 
-    const cardPhotos = await filesToPayloadWithCaption(
+    const cardPhotos = await fileGroupsToPayloadWithCaption(
       patientCardFiles,
       "patient-card",
     );
-    const followUpPhotos = await filesToPayloadWithCaption(
+    const followUpPhotos = await fileGroupsToPayloadWithCaption(
       followUpFiles,
       "follow-up",
     );
@@ -1158,8 +1234,8 @@ export function PalliativeWorkspace({
       "บันทึกการเยี่ยมแล้ว",
       () => {
         setVisitChecklist(defaultVisitChecklistState);
-        setPatientCardFiles(null);
-        setFollowUpFiles(null);
+        setPatientCardFiles([null]);
+        setFollowUpFiles([null]);
         setPatientCardFileInputKey((value) => value + 1);
         setFollowUpFileInputKey((value) => value + 1);
       },
@@ -1571,20 +1647,29 @@ export function PalliativeWorkspace({
                 </div>
                 {isAdmin ? (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => router.push("/case-manager")}
-                      className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
-                    >
-                      ไปหน้า Case Manager
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => router.push("/case-manager/registry")}
-                      className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
-                    >
-                      ไปหน้าทะเบียนเคส
-                    </button>
+                    {currentUserActions.map((action) => (
+                      <button
+                        key={action.href}
+                        type="button"
+                        onClick={() => router.push(action.href)}
+                        className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : currentUserActions.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {currentUserActions.map((action) => (
+                      <button
+                        key={action.href}
+                        type="button"
+                        onClick={() => router.push(action.href)}
+                        className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
+                      >
+                        {action.label}
+                      </button>
+                    ))}
                   </div>
                 ) : null}
               </div>
@@ -3022,32 +3107,79 @@ export function PalliativeWorkspace({
                         <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
                           {getPhotoCategoryLabel("patient-card")}
                         </div>
-                        <input
-                          key={patientCardFileInputKey}
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(event) =>
-                            setPatientCardFiles(event.target.files)
+                        <div className="mt-3 space-y-3">
+                          {patientCardFiles.map((files, index) => (
+                            <div key={`${patientCardFileInputKey}-${index}`}>
+                              <div className="mb-1 text-xs text-[#5f7486]">
+                                รูปที่ {index + 1}
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={(event) =>
+                                  setPatientCardFiles((prev) =>
+                                    prev.map((item, itemIndex) =>
+                                      itemIndex === index ? event.target.files : item,
+                                    ),
+                                  )
+                                }
+                                className="w-full text-sm outline-none"
+                              />
+                              <div className="mt-1 text-xs text-[#6f8190]">
+                                {files?.length ? "เลือกรูปแล้ว" : "ยังไม่ได้เลือกรูป"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPatientCardFiles((prev) => [...prev, null])
                           }
-                          className="mt-3 w-full text-sm outline-none"
-                        />
+                          className="mt-3 rounded-xl border border-[#12304733] px-3 py-2 text-xs font-medium text-[#123047]"
+                        >
+                          เพิ่มรูป
+                        </button>
                       </div>
                       <div className="rounded-2xl border border-dashed border-[#c9d9e3] bg-white px-4 py-3 text-sm sm:col-span-2">
                         <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
                           {getPhotoCategoryLabel("follow-up")}
                         </div>
-                        <input
-                          key={followUpFileInputKey}
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(event) =>
-                            setFollowUpFiles(event.target.files)
+                        <div className="mt-3 space-y-3">
+                          {followUpFiles.map((files, index) => (
+                            <div key={`${followUpFileInputKey}-${index}`}>
+                              <div className="mb-1 text-xs text-[#5f7486]">
+                                รูปที่ {index + 1}
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={(event) =>
+                                  setFollowUpFiles((prev) =>
+                                    prev.map((item, itemIndex) =>
+                                      itemIndex === index ? event.target.files : item,
+                                    ),
+                                  )
+                                }
+                                className="w-full text-sm outline-none"
+                              />
+                              <div className="mt-1 text-xs text-[#6f8190]">
+                                {files?.length ? "เลือกรูปแล้ว" : "ยังไม่ได้เลือกรูป"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFollowUpFiles((prev) => [...prev, null])
                           }
-                          className="mt-3 w-full text-sm outline-none"
-                        />
+                          className="mt-3 rounded-xl border border-[#12304733] px-3 py-2 text-xs font-medium text-[#123047]"
+                        >
+                          เพิ่มรูป
+                        </button>
                       </div>
                     </div>
                     <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -3295,166 +3427,206 @@ export function PalliativeWorkspace({
                 บันทึกชื่อ
               </button>
             </div>
-            {canApproveUsers ? (
+            {canManageUsers ? (
               <div className="mt-4 rounded-2xl border border-[#dbe7ef] bg-white p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="text-sm font-medium text-[#123047]">
-                    คำขอสมัครสมาชิก ({pendingRequests.length})
-                  </div>
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={loadPendingRequests}
-                    className="rounded-xl border border-[#12304733] px-3 py-1 text-xs text-[#123047]"
+                    onClick={() => setUserManagementTab("members")}
+                    className={`rounded-xl px-3 py-2 text-sm font-medium ${
+                      userManagementTab === "members"
+                        ? "bg-[#123047] text-white"
+                        : "border border-[#12304722] text-[#123047]"
+                    }`}
                   >
-                    รีเฟรชคำขอ
+                    จัดการสมาชิก
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUserManagementTab("approvals")}
+                    className={`rounded-xl px-3 py-2 text-sm font-medium ${
+                      userManagementTab === "approvals"
+                        ? "bg-[#123047] text-white"
+                        : "border border-[#12304722] text-[#123047]"
+                    }`}
+                  >
+                    อนุมัติคำขอ ({pendingRequests.length})
                   </button>
                 </div>
-                <div className="space-y-2">
-                  {pendingRequests.length ? (
-                    pendingRequests.map((request) => (
-                      <div
-                        key={request.id}
-                        className="rounded-xl border border-[#e4edf3] bg-[#f9fcfe] p-3 text-sm"
-                      >
-                        <div className="font-medium text-[#123047]">{request.displayName}</div>
-                        <div className="text-xs text-[#5f7486]">
-                          {request.username} · {formatRoleLabel(request.role)} ·{" "}
-                          {snapshot.units.find((unit) => unit.id === request.unitId)?.name ??
-                            request.unitId}
-                        </div>
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => reviewRequest(request.id, true)}
-                            className="rounded-xl bg-[#0f766e] px-3 py-1.5 text-xs font-medium text-white"
-                          >
-                            อนุมัติ
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => reviewRequest(request.id, false)}
-                            className="rounded-xl bg-[#9f1239] px-3 py-1.5 text-xs font-medium text-white"
-                          >
-                            ไม่อนุมัติ
-                          </button>
-                        </div>
+
+                {userManagementTab === "approvals" ? (
+                  <div className="mt-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="text-sm font-medium text-[#123047]">
+                        รายการคำขอสมัครสมาชิก
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-xs text-[#6f8190]">ไม่มีคำขอค้างอนุมัติ</div>
-                  )}
-                </div>
-              </div>
-            ) : null}
-
-            {isAdmin ? (
-              <div className="mt-4 rounded-2xl border border-[#dbe7ef] bg-white p-4">
-                <div className="text-sm font-medium text-[#123047]">เพิ่มผู้ใช้ใหม่ (Admin)</div>
-                <div className="mt-3 grid gap-2">
-                  <input
-                    value={newUserDraft.username}
-                    onChange={(event) =>
-                      setNewUserDraft((prev) => ({ ...prev, username: event.target.value }))
-                    }
-                    placeholder="username"
-                    className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={newUserDraft.displayName}
-                    onChange={(event) =>
-                      setNewUserDraft((prev) => ({ ...prev, displayName: event.target.value }))
-                    }
-                    placeholder="ชื่อที่แสดง"
-                    className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    type="password"
-                    value={newUserDraft.password}
-                    onChange={(event) =>
-                      setNewUserDraft((prev) => ({ ...prev, password: event.target.value }))
-                    }
-                    placeholder="รหัสผ่าน"
-                    className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
-                  />
-                  <select
-                    value={newUserDraft.role}
-                    onChange={(event) =>
-                      setNewUserDraft((prev) => ({ ...prev, role: event.target.value as UserRole }))
-                    }
-                    className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
-                  >
-                    {roleOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={newUserDraft.unitId}
-                    onChange={(event) =>
-                      setNewUserDraft((prev) => ({ ...prev, unitId: event.target.value }))
-                    }
-                    className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
-                  >
-                    {snapshot.units.map((unit) => (
-                      <option key={unit.id} value={unit.id}>
-                        {unit.name}
-                      </option>
-                    ))}
-                  </select>
-                  <label className="flex items-center gap-2 text-xs text-[#5f7486]">
-                    <input
-                      type="checkbox"
-                      checked={newUserDraft.active}
-                      onChange={(event) =>
-                        setNewUserDraft((prev) => ({ ...prev, active: event.target.checked }))
-                      }
-                    />
-                    เปิดใช้งานทันที
-                  </label>
-                  <button
-                    type="button"
-                    onClick={createUserByAdminAction}
-                    className="rounded-xl bg-[#123047] px-3 py-2 text-sm font-medium text-white"
-                  >
-                    เพิ่มผู้ใช้
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {snapshot.users.map((user) => (
-                <div
-                  key={user.id}
-                  className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]"
-                >
-                  <div className="font-medium">{user.displayName}</div>
-                  <div className="text-xs text-[#6f8190]">
-                    {user.username} · {formatRoleLabel(user.role)} ·{" "}
-                    {user.active ? "Active" : "Inactive"}
-                  </div>
-                  {isAdmin && user.id !== sessionUser?.id ? (
-                    <div className="mt-2 flex gap-2">
                       <button
                         type="button"
-                        onClick={() => quickToggleUserActive(user.id, !user.active)}
-                        className="rounded-xl border border-[#12304733] px-2 py-1 text-xs text-[#123047]"
+                        onClick={loadPendingRequests}
+                        className="rounded-xl border border-[#12304733] px-3 py-1 text-xs text-[#123047]"
                       >
-                        {user.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeUser(user.id)}
-                        className="rounded-xl border border-[#9f123933] px-2 py-1 text-xs text-[#9f1239]"
-                      >
-                        ลบ
+                        รีเฟรชคำขอ
                       </button>
                     </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+                    <div className="space-y-2">
+                      {pendingRequests.length ? (
+                        pendingRequests.map((request) => (
+                          <div
+                            key={request.id}
+                            className="rounded-xl border border-[#e4edf3] bg-[#f9fcfe] p-3 text-sm"
+                          >
+                            <div className="font-medium text-[#123047]">{request.displayName}</div>
+                            <div className="text-xs text-[#5f7486]">
+                              {request.username} · {formatRoleLabel(request.role)} ·{" "}
+                              {snapshot.units.find((unit) => unit.id === request.unitId)?.name ??
+                                request.unitId}
+                            </div>
+                            <div className="mt-1 text-xs text-[#7a8b99]">
+                              ขอเมื่อ {formatDateTime(request.requestedAt)}
+                            </div>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => reviewRequest(request.id, true)}
+                                className="rounded-xl bg-[#0f766e] px-3 py-1.5 text-xs font-medium text-white"
+                              >
+                                อนุมัติ
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => reviewRequest(request.id, false)}
+                                className="rounded-xl bg-[#9f1239] px-3 py-1.5 text-xs font-medium text-white"
+                              >
+                                ไม่อนุมัติ
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-[#6f8190]">ไม่มีคำขอค้างอนุมัติ</div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-4 rounded-2xl border border-[#dbe7ef] bg-[#f9fcfe] p-4">
+                      <div className="text-sm font-medium text-[#123047]">
+                        เพิ่มสมาชิกใหม่ ({isAdmin ? "Admin" : "Case Manager"})
+                      </div>
+                      <div className="mt-3 grid gap-2">
+                        <input
+                          value={newUserDraft.username}
+                          onChange={(event) =>
+                            setNewUserDraft((prev) => ({ ...prev, username: event.target.value }))
+                          }
+                          placeholder="username"
+                          className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                        />
+                        <input
+                          value={newUserDraft.displayName}
+                          onChange={(event) =>
+                            setNewUserDraft((prev) => ({ ...prev, displayName: event.target.value }))
+                          }
+                          placeholder="ชื่อที่แสดง"
+                          className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                        />
+                        <input
+                          type="password"
+                          value={newUserDraft.password}
+                          onChange={(event) =>
+                            setNewUserDraft((prev) => ({ ...prev, password: event.target.value }))
+                          }
+                          placeholder="รหัสผ่าน"
+                          className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                        />
+                        <select
+                          value={newUserDraft.role}
+                          onChange={(event) =>
+                            setNewUserDraft((prev) => ({
+                              ...prev,
+                              role: event.target.value as UserRole,
+                            }))
+                          }
+                          className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                        >
+                          {manageableRoleOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={newUserDraft.unitId}
+                          onChange={(event) =>
+                            setNewUserDraft((prev) => ({ ...prev, unitId: event.target.value }))
+                          }
+                          className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                        >
+                          {snapshot.units.map((unit) => (
+                            <option key={unit.id} value={unit.id}>
+                              {unit.name}
+                            </option>
+                          ))}
+                        </select>
+                        <label className="flex items-center gap-2 text-xs text-[#5f7486]">
+                          <input
+                            type="checkbox"
+                            checked={newUserDraft.active}
+                            onChange={(event) =>
+                              setNewUserDraft((prev) => ({ ...prev, active: event.target.checked }))
+                            }
+                          />
+                          เปิดใช้งานทันที
+                        </label>
+                        <button
+                          type="button"
+                          onClick={createUserByAdminAction}
+                          className="rounded-xl bg-[#123047] px-3 py-2 text-sm font-medium text-white"
+                        >
+                          เพิ่มสมาชิก
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {snapshot.users.map((user) => (
+                        <div
+                          key={user.id}
+                          className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]"
+                        >
+                          <div className="font-medium">{user.displayName}</div>
+                          <div className="text-xs text-[#6f8190]">
+                            {user.username} · {formatRoleLabel(user.role)} ·{" "}
+                            {user.active ? "Active" : "Inactive"}
+                          </div>
+                          <div className="mt-1 text-xs text-[#7a8b99]">
+                            {snapshot.units.find((unit) => unit.id === user.unitId)?.name ?? user.unitId}
+                          </div>
+                          {canManageUsers && user.id !== sessionUser?.id ? (
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => quickToggleUserActive(user.id, !user.active)}
+                                className="rounded-xl border border-[#12304733] px-2 py-1 text-xs text-[#123047]"
+                              >
+                                {user.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeUser(user.id)}
+                                className="rounded-xl border border-[#9f123933] px-2 py-1 text-xs text-[#9f1239]"
+                              >
+                                ลบสมาชิก
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : null}
           </div>
           <div className="rounded-[1.5rem] bg-[#fff9ef] p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

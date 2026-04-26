@@ -2491,6 +2491,10 @@ function roleIsAdmin(role?: UserRole) {
   return role === "hospital_admin";
 }
 
+function roleCanManageUsers(role?: UserRole) {
+  return role === "hospital_admin" || role === "hospital_case_manager";
+}
+
 function hashToken(token: string) {
   return Buffer.from(token).toString("base64url").slice(0, 120);
 }
@@ -2757,8 +2761,8 @@ export async function adminCreateUser(input: {
   active?: boolean;
 }) {
   const actor = await getSessionUserFromToken(input.token);
-  if (!actor || actor.id !== input.actorUserId || !roleIsAdmin(actor.role)) {
-    throw new Error("เฉพาะ admin เท่านั้น");
+  if (!actor || actor.id !== input.actorUserId || !roleCanManageUsers(actor.role)) {
+    throw new Error("เฉพาะ admin หรือ case manager เท่านั้น");
   }
 
   if (!isDbConfigured("palliative")) {
@@ -2820,8 +2824,8 @@ export async function adminUpdateUser(input: {
   password?: string;
 }) {
   const actor = await getSessionUserFromToken(input.token);
-  if (!actor || actor.id !== input.actorUserId || !roleIsAdmin(actor.role)) {
-    throw new Error("เฉพาะ admin เท่านั้น");
+  if (!actor || actor.id !== input.actorUserId || !roleCanManageUsers(actor.role)) {
+    throw new Error("เฉพาะ admin หรือ case manager เท่านั้น");
   }
 
   if (!isDbConfigured("palliative")) {
@@ -2875,8 +2879,8 @@ export async function adminDeleteUser(input: {
   targetUserId: string;
 }) {
   const actor = await getSessionUserFromToken(input.token);
-  if (!actor || actor.id !== input.actorUserId || !roleIsAdmin(actor.role)) {
-    throw new Error("เฉพาะ admin เท่านั้น");
+  if (!actor || actor.id !== input.actorUserId || !roleCanManageUsers(actor.role)) {
+    throw new Error("เฉพาะ admin หรือ case manager เท่านั้น");
   }
   if (input.targetUserId === input.actorUserId) {
     throw new Error("ไม่สามารถลบบัญชีของตัวเอง");

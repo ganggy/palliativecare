@@ -16,7 +16,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (actor.id === id) {
       await renameAppUser(id, body.displayName);
     } else {
-      if (actor.role !== "hospital_admin") {
+      if (
+        actor.role !== "hospital_admin" &&
+        actor.role !== "hospital_case_manager"
+      ) {
         return NextResponse.json({ error: "forbidden" }, { status: 403 });
       }
       await adminUpdateUser({
