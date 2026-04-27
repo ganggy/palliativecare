@@ -500,6 +500,19 @@ export function PalliativeWorkspace({
     currentUser?.role === "hospital_card_room" ||
     currentUser?.role === "hospital_admin" ||
     currentUser?.role === "hospital_case_manager";
+  const pageNavigationActions = useMemo(() => {
+    if (
+      currentUser?.role !== "hospital_admin" &&
+      currentUser?.role !== "hospital_case_manager" &&
+      currentUser?.role !== "hospital_executive"
+    ) {
+      return [];
+    }
+    return [
+      { href: "/", label: "หน้าหลัก" },
+      ...getSelfNavigationActions(currentUser.role).filter((action) => action.href !== pathname),
+    ];
+  }, [currentUser?.role, pathname]);
   const isUnitNurse = currentUser?.role === "unit_nurse";
   const isUnitManager = currentUser?.role === "unit_manager";
   const [nurseTab, setNurseTab] = useState<NurseWorkspaceTab>("search");
@@ -1699,6 +1712,19 @@ export function PalliativeWorkspace({
                   ออกจากระบบ
                 </button>
               </div>
+              {pageNavigationActions.length ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {pageNavigationActions.map((action) => (
+                    <Link
+                      key={action.href}
+                      href={action.href}
+                      className="rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-medium text-white transition hover:bg-white/25"
+                    >
+                      {action.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </header>
@@ -1827,6 +1853,19 @@ export function PalliativeWorkspace({
                   ออกจากระบบ
                 </button>
               </div>
+              {pageNavigationActions.length ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {pageNavigationActions.map((action) => (
+                    <Link
+                      key={action.href}
+                      href={action.href}
+                      className="rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-medium text-white transition hover:bg-white/25"
+                    >
+                      {action.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </header>
