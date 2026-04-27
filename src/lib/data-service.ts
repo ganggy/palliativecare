@@ -210,6 +210,7 @@ const canonicalUserDisplayNameByUsername: Record<string, string> = {
   hosadmin: "ผู้ดูแลระบบโรงพยาบาล",
   "case.manager": "Case Manager โรงพยาบาล",
   executive: "ผู้บริหาร",
+  rukchanoke: "ผู้บริหาร",
   "card.room": "ห้องบัตร",
   "pcu.hospital": "ทีม PCU โรงพยาบาล",
   "huey.manager": "หัวหน้าทีมห้วยหีบ",
@@ -379,6 +380,16 @@ async function ensureAuthSchema() {
   for (const sql of migrations) {
     await pool.query(sql);
   }
+
+  await pool.query(
+    `
+      UPDATE palliative_users
+      SET role = 'hospital_executive',
+          unit_id = 'hospital-core',
+          active = 1
+      WHERE LOWER(username) = 'rukchanoke'
+    `,
+  );
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS palliative_auth_sessions (

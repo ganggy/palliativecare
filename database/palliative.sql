@@ -168,6 +168,7 @@ INSERT INTO palliative_users (id, username, display_name, role, unit_id, active)
   ('u-hos-admin', 'hosadmin', 'ผู้ดูแลระบบโรงพยาบาล', 'hospital_admin', 'hospital-core', 1),
   ('u-hos-case', 'case.manager', 'Case Manager โรงพยาบาล', 'hospital_case_manager', 'hospital-core', 1),
   ('u-executive', 'executive', 'ผู้บริหาร', 'hospital_executive', 'hospital-core', 1),
+  ('u-rukchanoke', 'rukchanoke', 'ผู้บริหาร', 'hospital_executive', 'hospital-core', 1),
   ('u-card-room', 'card.room', 'ห้องบัตร', 'hospital_card_room', 'hospital-core', 1),
   ('u-pcu-hospital', 'pcu.hospital', 'ทีม PCU โรงพยาบาล', 'hospital_pcu', 'pcu-hospital', 1),
   ('u-huey-manager', 'huey.manager', 'หัวหน้าทีมห้วยหีบ', 'unit_manager', 'huey-hib', 1),
