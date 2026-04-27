@@ -1,0 +1,9 @@
+extends: existence
+message: SCG 2569 updates say `%s` needs a current coding relationship review.
+level: warning
+scope: text
+tokens:
+  - '\bR65\b'
+  - '\bZ21\b'
+  - 'SIRS'
+  - 'Systemic inflammatory response'

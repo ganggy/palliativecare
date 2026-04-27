@@ -200,7 +200,7 @@ SELECT
       )
       FROM ovstdiag d
       WHERE d.vn = o.vn
-        AND UPPER(REPLACE(d.icd10, '.', '')) REGEXP '^(B2[0-4]|C|D[0-4]|I5|I6|J44|K704|K717|K72|N185|Z515|Z718)'
+        AND UPPER(REPLACE(d.icd10, '.', '')) REGEXP '^(B2[0-4]|C|D[0-4]|F03|I5|I6|J44|K704|K717|K72|K74|N185|Z515|Z718)'
     ),
     COALESCE(vs.pdx, '')
   ) AS pdx,
@@ -213,7 +213,7 @@ SELECT
       )
       FROM ovstdiag d
       WHERE d.vn = o.vn
-        AND UPPER(REPLACE(d.icd10, '.', '')) REGEXP '^(B2[0-4]|C|D[0-4]|I5|I6|J44|K704|K717|K72|N185|Z515|Z718)'
+        AND UPPER(REPLACE(d.icd10, '.', '')) REGEXP '^(B2[0-4]|C|D[0-4]|F03|I5|I6|J44|K704|K717|K72|K74|N185|Z515|Z718)'
     ),
     COALESCE(vs.pdx, '')
   ) AS primaryDxName,
