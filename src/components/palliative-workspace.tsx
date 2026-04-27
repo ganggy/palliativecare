@@ -2190,7 +2190,7 @@ export function PalliativeWorkspace({
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
                 เชื่อมงานโรงพยาบาล, รพ.สต. และ PCU ตั้งแต่คัดเลือกเคสจาก HOSXP
-                ไปจนถึงสรุป STM เพื่อแบ่งเงินแต่ละหน่วย
+                ไปจนถึงติดตามเยี่ยมบ้านและสรุปผลการดูแลแต่ละหน่วย
               </p>
             </div>
             <div className="rounded-[1.8rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
@@ -3989,10 +3989,10 @@ export function PalliativeWorkspace({
 
       {!isUnitNurse && !isUnitManager ? (
         <Box
-          title="ผู้ใช้งานและ STM/REP"
-          note="ตั้งชื่อผู้ใช้พื้นฐาน และนำเข้าข้อมูลการเงินเพื่อแบ่งยอดให้แต่ละหน่วย"
+          title="ผู้ใช้งาน"
+          note="ตั้งชื่อผู้ใช้พื้นฐาน จัดการสมาชิก และอนุมัติคำขอเข้าใช้งาน"
         >
-        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid gap-6">
           <div className="rounded-[1.5rem] bg-[#f7fbfd] p-5">
             <div className="text-sm font-medium text-[#123047]">
               ชื่อที่แสดงของผู้ใช้ปัจจุบัน
@@ -4224,129 +4224,6 @@ export function PalliativeWorkspace({
                     </div>
                   </>
                 )}
-              </div>
-            ) : null}
-          </div>
-          <div className="rounded-[1.5rem] bg-[#fff9ef] p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-sm font-medium text-[#123047]">
-                  นำเข้า REP / STM
-                </div>
-                <div className="mt-1 text-sm text-[#6f8190]">
-                  รูปแบบ `HN,ชื่อ,ยอดเงิน,unitId,claimMonth,note`
-                  และตั้งเปอร์เซ็นต์แบ่งให้หน่วยได้
-                </div>
-              </div>
-              <input
-                type="number"
-                value={stmPercent}
-                onChange={(event) =>
-                  setStmPercent(Number.parseInt(event.target.value || "50", 10))
-                }
-                className="w-24 rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-              />
-            </div>
-            <div className="mt-4 grid gap-3">
-              <div className="grid gap-3 rounded-2xl border border-[#e7d5aa] bg-[#fff4dc] p-4 sm:grid-cols-[0.28fr_0.42fr_0.3fr]">
-                <select
-                  value={importSource}
-                  onChange={(event) => {
-                    setImportSource(event.target.value as ImportSource);
-                    setImportFiles([]);
-                    setSelectedImportPath("");
-                  }}
-                  className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                >
-                  <option value="REP">โฟลเดอร์ REP</option>
-                  <option value="STM">โฟลเดอร์ STM</option>
-                </select>
-                <select
-                  value={selectedImportPath}
-                  onChange={(event) =>
-                    setSelectedImportPath(event.target.value)
-                  }
-                  className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-                >
-                  <option value="">เลือกไฟล์จากโฟลเดอร์</option>
-                  {importFiles.map((file) => (
-                    <option key={file.fullPath} value={file.fullPath}>
-                      {file.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={loadImportFiles}
-                    className="w-full rounded-2xl border border-[#12304744] bg-white px-3 py-3 text-sm font-medium text-[#123047]"
-                  >
-                    โหลดรายชื่อไฟล์
-                  </button>
-                  <button
-                    type="button"
-                    onClick={readSelectedImportFile}
-                    className="w-full rounded-2xl bg-[#123047] px-3 py-3 text-sm font-medium text-white"
-                  >
-                    อ่านไฟล์
-                  </button>
-                </div>
-              </div>
-              <input
-                value={stmFileName}
-                onChange={(event) => setStmFileName(event.target.value)}
-                className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-              />
-              <input
-                type="file"
-                accept=".csv,.txt,.rep,.stm,.xls,.xlsx"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  setStmFileName(file.name);
-                  void file.text().then((text) => setStmText(text));
-                }}
-                className="rounded-2xl border border-dashed border-[#c9d9e3] bg-white px-4 py-3 text-sm"
-              />
-              <textarea
-                value={stmText}
-                onChange={(event) => setStmText(event.target.value)}
-                rows={6}
-                className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
-              />
-              <button
-                type="button"
-                onClick={importStm}
-                className="rounded-2xl bg-[#8c6a19] px-5 py-3 text-sm font-medium text-white"
-              >
-                นำเข้าข้อมูลการเงิน
-              </button>
-            </div>
-            {latestStm ? (
-              <div className="mt-4 space-y-2">
-                {latestStm.allocations.map((allocation) => (
-                  <div
-                    key={allocation.unitId}
-                    className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm"
-                  >
-                    <div>
-                      <div className="font-medium text-[#123047]">
-                        {allocation.unitName}
-                      </div>
-                      <div className="text-xs text-[#6f8190]">
-                        {allocation.rowCount} รายการ · {allocation.percent}%
-                      </div>
-                    </div>
-                    <div className="text-right text-[#123047]">
-                      <div className="font-medium">
-                        {formatMoney(allocation.allocatedAmount)}
-                      </div>
-                      <div className="text-xs text-[#6f8190]">
-                        จากทั้งหมด {formatMoney(allocation.totalAmount)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
             ) : null}
           </div>
