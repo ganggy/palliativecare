@@ -796,7 +796,10 @@ export function PalliativeWorkspace({
         const label = getExecutiveDiseaseGroup(patient);
         diseaseMap.set(label, (diseaseMap.get(label) ?? 0) + 1);
       }
-      const topDisease = [...diseaseMap.entries()].sort((a, b) => b[1] - a[1])[0];
+      const diseaseRows = [...diseaseMap.entries()]
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "th"));
+      const topDisease = diseaseRows[0];
 
       return {
         unitId: unit.id,
@@ -811,8 +814,9 @@ export function PalliativeWorkspace({
         visitsMonth,
         visitsFiscalYear,
         progress,
-        topDiseaseLabel: topDisease?.[0] ?? "-",
-        topDiseaseCount: topDisease?.[1] ?? 0,
+        diseaseRows,
+        topDiseaseLabel: topDisease?.label ?? "-",
+        topDiseaseCount: topDisease?.count ?? 0,
       };
     });
   }, [fiscalYearStart, snapshot.currentDate, snapshot.patients, snapshot.units, snapshot.visits]);
@@ -1957,6 +1961,66 @@ export function PalliativeWorkspace({
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-[#dce7de] bg-white p-5 shadow-[0_16px_40px_rgba(39,58,47,0.08)]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-[#20382f]">หน้าโรคแยกราย รพ.สต.</h2>
+              <p className="mt-1 text-sm text-[#697b6e]">
+                ดูภาระโรคของแต่ละหน่วยแบบแยกชัดเจน เพื่อเห็นว่าหน่วยไหนดูแลโรคกลุ่มใดมากที่สุด
+              </p>
+            </div>
+            <div className="rounded-full bg-[#eef4eb] px-4 py-2 text-sm font-medium text-[#496f5a]">
+              รวม {executiveDiseaseRows.length} กลุ่มโรค
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+            {executiveRows.map((unitRow) => {
+              const unitMaxDiseaseTotal = Math.max(1, ...unitRow.diseaseRows.map((row) => row.count));
+              return (
+                <div
+                  key={unitRow.unitId}
+                  className="rounded-[1.4rem] border border-[#e2eadf] bg-[linear-gradient(180deg,#fbfdf8_0%,#f4f8f0_100%)] p-5"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-semibold text-[#20382f]">{unitRow.unitName}</h3>
+                      <p className="mt-1 text-xs text-[#697b6e]">
+                        {unitRow.total} เคส · โรคหลัก {unitRow.topDiseaseLabel}
+                        {unitRow.topDiseaseCount ? ` ${unitRow.topDiseaseCount} เคส` : ""}
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#496f5a] shadow-sm">
+                      คืบหน้า {unitRow.progress}%
+                    </div>
+                  </div>
+                  <div className="mt-5 space-y-3">
+                    {unitRow.diseaseRows.length ? (
+                      unitRow.diseaseRows.map((row) => (
+                        <div key={`${unitRow.unitId}-${row.label}`}>
+                          <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+                            <span className="font-medium text-[#20382f]">{row.label}</span>
+                            <span className="text-[#697b6e]">{row.count} เคส</span>
+                          </div>
+                          <div className="h-3 overflow-hidden rounded-full bg-white">
+                            <div
+                              className="h-full rounded-full bg-[linear-gradient(90deg,#496f5a,#d7a642)]"
+                              style={{ width: `${(row.count / unitMaxDiseaseTotal) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-[#d6e2d6] bg-white/70 px-4 py-5 text-sm text-[#697b6e]">
+                        ยังไม่มีเคสที่กำลังดูแลในหน่วยนี้
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
