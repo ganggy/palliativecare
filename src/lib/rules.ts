@@ -262,6 +262,8 @@ export function validateVisitSubmission(input: {
 export function formatRoleLabel(role: UserRole): string {
   if (role === "hospital_admin") return "ผู้ดูแลโรงพยาบาล";
   if (role === "hospital_case_manager") return "Case manager โรงพยาบาล";
+  if (role === "hospital_executive") return "ผู้บริหาร";
+  if (role === "hospital_card_room") return "ห้องบัตร";
   if (role === "hospital_pcu") return "ทีม PCU โรงพยาบาล";
   if (role === "unit_manager") return "หัวหน้าหน่วย รพ.สต.";
   return "ผู้ปฏิบัติงาน รพ.สต./PCU";

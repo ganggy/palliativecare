@@ -209,6 +209,8 @@ function looksCorruptedThai(value: string): boolean {
 const canonicalUserDisplayNameByUsername: Record<string, string> = {
   hosadmin: "ผู้ดูแลระบบโรงพยาบาล",
   "case.manager": "Case Manager โรงพยาบาล",
+  executive: "ผู้บริหาร",
+  "card.room": "ห้องบัตร",
   "pcu.hospital": "ทีม PCU โรงพยาบาล",
   "huey.manager": "หัวหน้าทีมห้วยหีบ",
   "huey.nurse": "พยาบาลห้วยหีบ",
@@ -221,6 +223,8 @@ const canonicalUserDisplayNameByUsername: Record<string, string> = {
 function roleFallbackLabel(role: AppUser["role"]): string {
   if (role === "hospital_admin") return "ผู้ดูแลระบบโรงพยาบาล";
   if (role === "hospital_case_manager") return "Case Manager โรงพยาบาล";
+  if (role === "hospital_executive") return "ผู้บริหาร";
+  if (role === "hospital_card_room") return "ห้องบัตร";
   if (role === "hospital_pcu") return "ทีม PCU โรงพยาบาล";
   if (role === "unit_manager") return "หัวหน้าหน่วย";
   return "พยาบาลหน่วย";
@@ -343,6 +347,33 @@ async function ensureAuthSchema() {
   }
   if (!columns.has("review_note")) {
     migrations.push(`ALTER TABLE palliative_users ADD COLUMN review_note VARCHAR(255) NULL AFTER approved_by_user_id`);
+  }
+  if (columns.has("role")) {
+    const [roleColumnRows] = await pool.query(`
+      SELECT COLUMN_TYPE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'palliative_users'
+        AND COLUMN_NAME = 'role'
+      LIMIT 1
+    `);
+    const roleColumnType = String(
+      (roleColumnRows as Array<{ COLUMN_TYPE?: string }>)[0]?.COLUMN_TYPE ?? "",
+    );
+    if (!roleColumnType.includes("hospital_executive") || !roleColumnType.includes("hospital_card_room")) {
+      migrations.push(`
+        ALTER TABLE palliative_users
+        MODIFY role ENUM(
+          'hospital_admin',
+          'hospital_case_manager',
+          'hospital_executive',
+          'hospital_card_room',
+          'hospital_pcu',
+          'unit_manager',
+          'unit_nurse'
+        ) NOT NULL
+      `);
+    }
   }
 
   for (const sql of migrations) {

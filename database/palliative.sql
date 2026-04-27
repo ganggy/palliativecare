@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS palliative_users (
   id VARCHAR(50) NOT NULL,
   username VARCHAR(80) NOT NULL,
   display_name VARCHAR(255) NOT NULL,
-  role ENUM('hospital_admin','hospital_case_manager','hospital_pcu','unit_manager','unit_nurse') NOT NULL,
+  role ENUM('hospital_admin','hospital_case_manager','hospital_executive','hospital_card_room','hospital_pcu','unit_manager','unit_nurse') NOT NULL,
   unit_id VARCHAR(50) NOT NULL,
   active TINYINT(1) NOT NULL DEFAULT 1,
   password_hash VARCHAR(255) NULL,
@@ -167,6 +167,8 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO palliative_users (id, username, display_name, role, unit_id, active) VALUES
   ('u-hos-admin', 'hosadmin', 'ผู้ดูแลระบบโรงพยาบาล', 'hospital_admin', 'hospital-core', 1),
   ('u-hos-case', 'case.manager', 'Case Manager โรงพยาบาล', 'hospital_case_manager', 'hospital-core', 1),
+  ('u-executive', 'executive', 'ผู้บริหาร', 'hospital_executive', 'hospital-core', 1),
+  ('u-card-room', 'card.room', 'ห้องบัตร', 'hospital_card_room', 'hospital-core', 1),
   ('u-pcu-hospital', 'pcu.hospital', 'ทีม PCU โรงพยาบาล', 'hospital_pcu', 'pcu-hospital', 1),
   ('u-huey-manager', 'huey.manager', 'หัวหน้าทีมห้วยหีบ', 'unit_manager', 'huey-hib', 1),
   ('u-huey-nurse', 'huey.nurse', 'พยาบาลห้วยหีบ', 'unit_nurse', 'huey-hib', 1),

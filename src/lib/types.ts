@@ -3,6 +3,8 @@ export type UnitKind = "hospital" | "rphst" | "pcu";
 export type UserRole =
   | "hospital_admin"
   | "hospital_case_manager"
+  | "hospital_executive"
+  | "hospital_card_room"
   | "hospital_pcu"
   | "unit_manager"
   | "unit_nurse";

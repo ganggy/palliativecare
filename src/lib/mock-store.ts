@@ -55,6 +55,22 @@ const defaultUsers: AppUser[] = [
     active: true,
   },
   {
+    id: "u-card-room",
+    username: "card.room",
+    displayName: "ห้องบัตร",
+    role: "hospital_card_room",
+    unitId: "hospital-core",
+    active: true,
+  },
+  {
+    id: "u-executive",
+    username: "executive",
+    displayName: "ผู้บริหาร",
+    role: "hospital_executive",
+    unitId: "hospital-core",
+    active: true,
+  },
+  {
     id: "u-huey-manager",
     username: "huey.manager",
     displayName: "หัวหน้าทีมห้วยหีบ",
@@ -121,6 +137,24 @@ const guides: AppGuide[] = [
       "ตรวจความสมบูรณ์ข้อมูลก่อนเบิกและทวนแผนดูแลที่บ้าน",
       "แก้วันเยี่ยมได้ภายในเดือนเดียวกับรอบเยี่ยมเพื่อไม่ให้หลุดช่วงเบิก",
       "ใช้หน้าการเงินเพื่อกระจายยอดจาก STM/REP ตามสัดส่วนที่กำหนด",
+    ],
+  },
+  {
+    role: "hospital_executive",
+    title: "บทบาทผู้บริหาร",
+    steps: [
+      "ติดตามภาพรวมการดูแลและความพร้อมของข้อมูลในระดับโรงพยาบาล",
+      "ใช้ข้อมูลรายหน่วยเพื่อดูจำนวนเคส คิวเยี่ยม และความพร้อมเบิก",
+      "ไม่ต้องบันทึก visit แต่สามารถเข้าดูข้อมูลสรุปเพื่อประกอบการบริหารได้",
+    ],
+  },
+  {
+    role: "hospital_card_room",
+    title: "บทบาทห้องบัตร",
+    steps: [
+      "เลือกวันที่ที่ต้องการตรวจรายการคนไข้ที่มีการแนบรูปมาแล้ว",
+      "ใช้เลขบัตรประชาชน HN ชื่อคนไข้ และรูปที่แนบมาเพื่อช่วยเปิดบัตรหรือปิดสิทธิ์",
+      "หน้าห้องบัตรจะแสดงเฉพาะข้อมูลที่จำเป็นต่อการทำงานเท่านั้น",
     ],
   },
   {

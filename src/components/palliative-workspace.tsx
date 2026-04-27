@@ -3,7 +3,7 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LoadingProgressOverlay } from "@/components/loading-progress-overlay";
 import type {
   AppSnapshot,
@@ -167,6 +167,20 @@ function getFiscalYearStart(dateKey: string) {
   return `${year}-10-01`;
 }
 
+function getExecutiveDiseaseGroup(patient: PalliativePatient) {
+  const code = patient.primaryDxCode.toUpperCase();
+  if (code.startsWith("C") || code.startsWith("D3") || code.startsWith("D4")) return "มะเร็ง";
+  if (code.startsWith("I6")) return "Stroke/ระบบประสาท";
+  if (code.startsWith("N185")) return "ไตวาย CKD5";
+  if (code.startsWith("J44")) return "COPD";
+  if (code.startsWith("F03")) return "สมองเสื่อม";
+  if (code.startsWith("I50")) return "หัวใจล้มเหลว";
+  if (code.startsWith("B2")) return "HIV/AIDS";
+  if (code.startsWith("K7")) return "ตับแข็ง/ตับล้มเหลว";
+  if (code.startsWith("Z515") || code.startsWith("Z718")) return "Palliative Z-code";
+  return patient.eligibleReason || "อื่น ๆ";
+}
+
 function getPhotoCategoryLabel(category: VisitPhotoCategory) {
   if (category === "patient-card") return "รูปบัตรคู่กับคนไข้";
   return "รูปติดตามอาการคนไข้";
@@ -194,10 +208,22 @@ function candidateModeLabel(mode: CandidateFilterMode) {
 const roleOptions: Array<{ value: UserRole; label: string }> = [
   { value: "hospital_admin", label: "Admin โรงพยาบาล" },
   { value: "hospital_case_manager", label: "Case Manager โรงพยาบาล" },
+  { value: "hospital_executive", label: "ผู้บริหาร" },
+  { value: "hospital_card_room", label: "ห้องบัตร" },
   { value: "hospital_pcu", label: "PCU โรงพยาบาล" },
   { value: "unit_manager", label: "หัวหน้าหน่วย" },
   { value: "unit_nurse", label: "พยาบาลหน่วย" },
 ];
+
+const publicRegisterRoleOptions = roleOptions.filter((option) =>
+  [
+    "hospital_pcu",
+    "hospital_executive",
+    "hospital_card_room",
+    "unit_manager",
+    "unit_nurse",
+  ].includes(option.value),
+);
 
 function getManageableRoleOptions(role?: UserRole) {
   if (role === "hospital_admin") return roleOptions;
@@ -216,13 +242,23 @@ function getSelfNavigationActions(role?: UserRole) {
     return [
       { href: "/case-manager", label: "ไปหน้า Case Manager" },
       { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
+      { href: "/executive", label: "ไปหน้าผู้บริหาร" },
+      { href: "/card-room", label: "ไปหน้าห้องบัตร" },
     ];
   }
   if (role === "hospital_case_manager") {
     return [
       { href: "/case-manager", label: "ไปหน้า Case Manager" },
       { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
+      { href: "/executive", label: "ไปหน้าผู้บริหาร" },
+      { href: "/card-room", label: "ไปหน้าห้องบัตร" },
     ];
+  }
+  if (role === "hospital_executive") {
+    return [{ href: "/executive", label: "ไปหน้าผู้บริหาร" }];
+  }
+  if (role === "hospital_card_room") {
+    return [{ href: "/card-room", label: "ไปหน้าห้องบัตร" }];
   }
   if (role === "unit_manager") {
     return [{ href: "/unit-overview", label: "ไปหน้าภาพรวมหน่วย" }];
@@ -347,6 +383,7 @@ export function PalliativeWorkspace({
   preferredRole?: UserRole;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const initialUser =
     initialSnapshot.users.find((user) => user.role === preferredRole) ??
     initialSnapshot.users[1] ??
@@ -425,6 +462,7 @@ export function PalliativeWorkspace({
   const [registerUnitId, setRegisterUnitId] = useState(
     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
   );
+  const [cardRoomDate, setCardRoomDate] = useState(initialSnapshot.currentDate);
   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
   const [newUserDraft, setNewUserDraft] = useState({
     username: "",
@@ -453,6 +491,15 @@ export function PalliativeWorkspace({
     currentUser?.role === "hospital_admin" ||
     currentUser?.role === "hospital_case_manager";
   const isCaseManager = currentUser?.role === "hospital_case_manager";
+  const canViewExecutive =
+    currentUser?.role === "hospital_executive" ||
+    currentUser?.role === "hospital_admin" ||
+    currentUser?.role === "hospital_case_manager";
+  const isCardRoom = currentUser?.role === "hospital_card_room";
+  const canViewCardRoom =
+    currentUser?.role === "hospital_card_room" ||
+    currentUser?.role === "hospital_admin" ||
+    currentUser?.role === "hospital_case_manager";
   const isUnitNurse = currentUser?.role === "unit_nurse";
   const isUnitManager = currentUser?.role === "unit_manager";
   const [nurseTab, setNurseTab] = useState<NurseWorkspaceTab>("search");
@@ -700,6 +747,130 @@ export function PalliativeWorkspace({
   const displayedSelectedPatientVisitHistory = selectedPatient?.hn
     ? selectedPatientVisitHistory
     : [];
+  const executiveRows = useMemo(() => {
+    const unitRows = snapshot.units.filter((unit) => unit.kind !== "hospital");
+    return unitRows.map((unit) => {
+      const patients = snapshot.patients.filter(
+        (patient) =>
+          patient.assignedUnitId === unit.id &&
+          patient.careStatus !== "cancelled" &&
+          patient.careStatus !== "deceased",
+      );
+      const patientIds = new Set(patients.map((patient) => patient.id));
+      const completed = patients.filter((patient) => patient.careStatus === "completed").length;
+      const remaining = patients.length - completed;
+      const readyForClaim = patients.filter((patient) => patient.claimChecklist.readyForClaim).length;
+      const overdue = patients.filter(
+        (patient) => patient.nextVisitAt && patient.nextVisitAt < snapshot.currentDate,
+      ).length;
+      const visitsToday = snapshot.visits.filter(
+        (visit) => patientIds.has(visit.patientId) && visit.visitDate === snapshot.currentDate,
+      ).length;
+      const visitsMonth = snapshot.visits.filter(
+        (visit) =>
+          patientIds.has(visit.patientId) &&
+          monthKey(visit.visitDate) === monthKey(snapshot.currentDate),
+      ).length;
+      const visitsFiscalYear = snapshot.visits.filter(
+        (visit) =>
+          patientIds.has(visit.patientId) &&
+          visit.visitDate >= fiscalYearStart &&
+          visit.visitDate <= snapshot.currentDate,
+      ).length;
+      const progress = patients.length ? Math.round((completed / patients.length) * 100) : 0;
+      const diseaseMap = new Map<string, number>();
+      for (const patient of patients) {
+        const label = getExecutiveDiseaseGroup(patient);
+        diseaseMap.set(label, (diseaseMap.get(label) ?? 0) + 1);
+      }
+      const topDisease = [...diseaseMap.entries()].sort((a, b) => b[1] - a[1])[0];
+
+      return {
+        unitId: unit.id,
+        unitName: unit.name,
+        unitKind: unit.kind,
+        total: patients.length,
+        completed,
+        remaining,
+        readyForClaim,
+        overdue,
+        visitsToday,
+        visitsMonth,
+        visitsFiscalYear,
+        progress,
+        topDiseaseLabel: topDisease?.[0] ?? "-",
+        topDiseaseCount: topDisease?.[1] ?? 0,
+      };
+    });
+  }, [fiscalYearStart, snapshot.currentDate, snapshot.patients, snapshot.units, snapshot.visits]);
+  const executiveTotals = useMemo(() => {
+    const total = executiveRows.reduce((sum, row) => sum + row.total, 0);
+    const completed = executiveRows.reduce((sum, row) => sum + row.completed, 0);
+    const remaining = executiveRows.reduce((sum, row) => sum + row.remaining, 0);
+    const visitsToday = executiveRows.reduce((sum, row) => sum + row.visitsToday, 0);
+    const visitsMonth = executiveRows.reduce((sum, row) => sum + row.visitsMonth, 0);
+    const visitsFiscalYear = executiveRows.reduce((sum, row) => sum + row.visitsFiscalYear, 0);
+    const readyForClaim = executiveRows.reduce((sum, row) => sum + row.readyForClaim, 0);
+    const overdue = executiveRows.reduce((sum, row) => sum + row.overdue, 0);
+    return {
+      total,
+      completed,
+      remaining,
+      visitsToday,
+      visitsMonth,
+      visitsFiscalYear,
+      readyForClaim,
+      overdue,
+      progress: total ? Math.round((completed / total) * 100) : 0,
+    };
+  }, [executiveRows]);
+  const executiveDiseaseRows = useMemo(() => {
+    const diseaseMap = new Map<string, number>();
+    for (const patient of snapshot.patients) {
+      if (patient.careStatus === "cancelled" || patient.careStatus === "deceased") continue;
+      const label = getExecutiveDiseaseGroup(patient);
+      diseaseMap.set(label, (diseaseMap.get(label) ?? 0) + 1);
+    }
+    return [...diseaseMap.entries()]
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [snapshot.patients]);
+  const executiveMaxUnitTotal = Math.max(1, ...executiveRows.map((row) => row.total));
+  const executiveMaxDiseaseTotal = Math.max(1, ...executiveDiseaseRows.map((row) => row.count));
+  const cardRoomRows = useMemo(() => {
+    const unitNameById = new Map(snapshot.units.map((unit) => [unit.id, unit.name] as const));
+    const sortedVisits = [...snapshot.visits]
+      .filter((visit) => visit.visitDate === cardRoomDate && visit.photos.length > 0)
+      .sort((a, b) => {
+        const patientA = snapshot.patients.find((patient) => patient.id === a.patientId);
+        const patientB = snapshot.patients.find((patient) => patient.id === b.patientId);
+        const unitA = patientA?.assignedUnitName ?? unitNameById.get(a.unitId) ?? "";
+        const unitB = patientB?.assignedUnitName ?? unitNameById.get(b.unitId) ?? "";
+        return (
+          unitA.localeCompare(unitB, "th") ||
+          (patientA?.fullName ?? "").localeCompare(patientB?.fullName ?? "", "th") ||
+          a.id - b.id
+        );
+      });
+
+    const runningIndexByUnit = new Map<string, number>();
+    return sortedVisits.flatMap((visit) => {
+      const patient = snapshot.patients.find((item) => item.id === visit.patientId);
+      if (!patient) return [];
+      const unitName = patient.assignedUnitName || unitNameById.get(visit.unitId) || "-";
+      const nextIndex = (runningIndexByUnit.get(unitName) ?? 0) + 1;
+      runningIndexByUnit.set(unitName, nextIndex);
+      return [{
+        key: `${visit.id}-${patient.id}`,
+        order: nextIndex,
+        unitName,
+        cid: patient.cid,
+        hn: patient.hn,
+        fullName: patient.fullName,
+        photos: visit.photos,
+      }];
+    });
+  }, [cardRoomDate, snapshot.patients, snapshot.units, snapshot.visits]);
 
   useEffect(() => {
     if (!selectedPatient?.hn) {
@@ -834,6 +1005,12 @@ export function PalliativeWorkspace({
           if (result.user.role === "unit_nurse") {
             router.push("/nurse");
           }
+          if (result.user.role === "hospital_card_room") {
+            router.push("/card-room");
+          }
+          if (result.user.role === "hospital_executive") {
+            router.push("/executive");
+          }
           setNotice("เข้าสู่ระบบสำเร็จ");
         })
         .catch((error) =>
@@ -887,6 +1064,14 @@ export function PalliativeWorkspace({
       }
       if (nextUser.role === "hospital_case_manager") {
         router.push("/case-manager");
+        return;
+      }
+      if (nextUser.role === "hospital_card_room") {
+        router.push("/card-room");
+        return;
+      }
+      if (nextUser.role === "hospital_executive") {
+        router.push("/executive");
         return;
       }
       setCandidateMode("all");
@@ -1435,7 +1620,7 @@ export function PalliativeWorkspace({
                 onChange={(event) => setRegisterRole(event.target.value as UserRole)}
                 className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
               >
-                {roleOptions.map((option) => (
+                {publicRegisterRoleOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -1469,6 +1654,317 @@ export function PalliativeWorkspace({
             {notice}
           </div>
         ) : null}
+      </main>
+    );
+  }
+
+  if (canViewCardRoom && pathname === "/card-room") {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="rounded-[2.4rem] bg-[linear-gradient(135deg,#1e3a46_0%,#2d6172_52%,#d8ecef_100%)] p-6 text-white shadow-[0_30px_80px_rgba(6,29,43,0.22)] sm:p-8">
+          <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr] xl:items-end">
+            <div>
+              <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/85">
+                Card Room
+              </div>
+              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
+                หน้าห้องบัตร
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
+                เลือกวันที่เพื่อดูรายการคนไข้ที่มีรูปแนบสำหรับเปิดบัตรหรือปิดสิทธิ์
+              </p>
+            </div>
+            <div className="rounded-[1.8rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="text-xs uppercase tracking-[0.24em] text-white/70">
+                ผู้ใช้งานปัจจุบัน
+              </div>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                <input
+                  value={`${sessionUser.displayName} - ${formatRoleLabel(sessionUser.role)}`}
+                  readOnly
+                  className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  รีเฟรช
+                </button>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <Box
+          title="รายการคนไข้สำหรับห้องบัตร"
+          note="แสดงเฉพาะวันที่ที่เลือก โดยแยกตาม รพ.สต. พร้อมเลขบัตรประชาชน HN ชื่อคนไข้ และรูปที่แนบมา"
+        >
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-[#123047]" htmlFor="card-room-date">
+                วันที่
+              </label>
+              <input
+                id="card-room-date"
+                type="date"
+                value={cardRoomDate}
+                onChange={(event) => setCardRoomDate(event.target.value)}
+                className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+              />
+            </div>
+            <div className="rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-4 py-2 text-sm text-[#5f7486]">
+              พบ {cardRoomRows.length} รายการ
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[1.5rem] border border-[#e2edf4]">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-[#f5fafc] text-xs uppercase tracking-[0.2em] text-[#6f8190]">
+                  <tr>
+                    <th className="px-4 py-4">รพ.สต.</th>
+                    <th className="px-4 py-4">ลำดับ</th>
+                    <th className="px-4 py-4">เลขบัตร</th>
+                    <th className="px-4 py-4">HN</th>
+                    <th className="px-4 py-4">ชื่อคนไข้</th>
+                    <th className="px-4 py-4">รูปที่แนบมา</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cardRoomRows.length ? (
+                    cardRoomRows.map((row) => (
+                      <tr key={row.key} className="border-t border-[#edf3f7] align-top">
+                        <td className="px-4 py-4 text-[#123047]">{row.unitName}</td>
+                        <td className="px-4 py-4 text-[#123047]">{row.order}</td>
+                        <td className="px-4 py-4 text-[#123047]">{row.cid}</td>
+                        <td className="px-4 py-4 text-[#123047]">{row.hn}</td>
+                        <td className="px-4 py-4 font-medium text-[#123047]">{row.fullName}</td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-wrap gap-3">
+                            {row.photos.map((photo) => (
+                              <a
+                                key={photo.id}
+                                href={photo.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block"
+                              >
+                                <Image
+                                  src={photo.url}
+                                  alt={photo.fileName}
+                                  width={120}
+                                  height={120}
+                                  className="h-24 w-24 rounded-2xl border border-[#d9e5ec] object-cover"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-[#6f8190]">
+                        ไม่พบรายการคนไข้ที่มีรูปแนบในวันที่เลือก
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Box>
+      </main>
+    );
+  }
+
+  if (canViewExecutive && pathname === "/executive") {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="rounded-[2.4rem] bg-[linear-gradient(135deg,#244237_0%,#5d7f61_52%,#f4ead6_100%)] p-6 text-white shadow-[0_30px_80px_rgba(39,58,47,0.2)] sm:p-8">
+          <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr] xl:items-end">
+            <div>
+              <div className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/85">
+                Executive Dashboard
+              </div>
+              <h1 className="mt-4 max-w-4xl text-4xl font-semibold sm:text-5xl">
+                ภาพรวม Palliative รายหน่วย
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
+                เปรียบเทียบความคืบหน้า เคสคงเหลือ โรคหลัก และผลงานเยี่ยมบ้านของแต่ละ รพ.สต.
+              </p>
+            </div>
+            <div className="rounded-[1.2rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="text-xs uppercase tracking-[0.24em] text-white/70">
+                ผู้ใช้งานปัจจุบัน
+              </div>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                <input
+                  value={`${sessionUser.displayName} - ${formatRoleLabel(sessionUser.role)}`}
+                  readOnly
+                  className="w-full rounded-xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  รีเฟรช
+                </button>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            ["เคสทั้งหมด", executiveTotals.total],
+            ["ทำครบแล้ว", executiveTotals.completed],
+            ["คงเหลือ", executiveTotals.remaining],
+            ["พร้อมเบิก", executiveTotals.readyForClaim],
+            ["เยี่ยมวันนี้", executiveTotals.visitsToday],
+            ["เยี่ยมเดือนนี้", executiveTotals.visitsMonth],
+            ["ปีงบประมาณ", executiveTotals.visitsFiscalYear],
+            ["เลยกำหนด", executiveTotals.overdue],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="rounded-lg border border-[#dce7de] bg-white p-5 shadow-[0_16px_40px_rgba(39,58,47,0.08)]"
+            >
+              <div className="text-xs uppercase tracking-[0.2em] text-[#697b6e]">{label}</div>
+              <div className="mt-3 text-3xl font-semibold text-[#20382f]">{value}</div>
+            </div>
+          ))}
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="rounded-lg border border-[#dce7de] bg-white p-5 shadow-[0_16px_40px_rgba(39,58,47,0.08)]">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-[#20382f]">ความคืบหน้าราย รพ.สต.</h2>
+                <p className="mt-1 text-sm text-[#697b6e]">เทียบจำนวนเคสทั้งหมด ทำแล้ว และคงเหลือของแต่ละหน่วย</p>
+              </div>
+              <div className="text-sm font-medium text-[#20382f]">รวมสำเร็จ {executiveTotals.progress}%</div>
+            </div>
+            <div className="mt-6 space-y-4">
+              {executiveRows.map((row) => (
+                <div key={row.unitId} className="grid gap-3 lg:grid-cols-[220px_1fr_150px] lg:items-center">
+                  <div>
+                    <div className="font-semibold text-[#20382f]">{row.unitName}</div>
+                    <div className="text-xs text-[#697b6e]">
+                      {row.completed} ทำแล้ว · {row.remaining} คงเหลือ
+                    </div>
+                  </div>
+                  <div>
+                    <div className="h-4 overflow-hidden rounded-full bg-[#e8efe9]">
+                      <div
+                        className="h-full rounded-full bg-[linear-gradient(90deg,#3f7d5a,#d7a642)]"
+                        style={{ width: `${Math.max(4, row.progress)}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 flex h-8 overflow-hidden rounded-md bg-[#f4f7f2]">
+                      <div
+                        className="bg-[#5f8f6f]"
+                        style={{ width: `${(row.completed / executiveMaxUnitTotal) * 100}%` }}
+                        title={`ทำแล้ว ${row.completed}`}
+                      />
+                      <div
+                        className="bg-[#d7a642]"
+                        style={{ width: `${(row.remaining / executiveMaxUnitTotal) * 100}%` }}
+                        title={`คงเหลือ ${row.remaining}`}
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-md bg-[#f7faf6] px-3 py-2 text-right">
+                    <div className="text-lg font-semibold text-[#20382f]">{row.progress}%</div>
+                    <div className="text-xs text-[#697b6e]">พร้อมเบิก {row.readyForClaim}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#dce7de] bg-white p-5 shadow-[0_16px_40px_rgba(39,58,47,0.08)]">
+            <h2 className="text-xl font-semibold text-[#20382f]">กลุ่มโรคที่รับบริการ</h2>
+            <p className="mt-1 text-sm text-[#697b6e]">เรียงตามจำนวนเคสที่กำลังดูแล</p>
+            <div className="mt-5 space-y-4">
+              {executiveDiseaseRows.map((row) => (
+                <div key={row.label}>
+                  <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-[#20382f]">{row.label}</span>
+                    <span className="text-[#697b6e]">{row.count}</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-[#edf2ed]">
+                    <div
+                      className="h-full rounded-full bg-[#496f5a]"
+                      style={{ width: `${(row.count / executiveMaxDiseaseTotal) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-[#dce7de] bg-white p-5 shadow-[0_16px_40px_rgba(39,58,47,0.08)]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-[#20382f]">ตารางเปรียบเทียบผลงานรายหน่วย</h2>
+              <p className="mt-1 text-sm text-[#697b6e]">ยอดวันนี้ เดือนนี้ และปีงบประมาณ ใช้อ่านความเร็วของงานแต่ละ รพ.สต.</p>
+            </div>
+            <div className="text-sm text-[#697b6e]">ข้อมูล ณ {formatDate(snapshot.currentDate)}</div>
+          </div>
+          <div className="mt-5 overflow-hidden rounded-lg border border-[#e1e9e1]">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-[#f4f7f2] text-xs uppercase tracking-[0.16em] text-[#697b6e]">
+                  <tr>
+                    <th className="px-4 py-3">รพ.สต.</th>
+                    <th className="px-4 py-3">ทั้งหมด</th>
+                    <th className="px-4 py-3">ทำแล้ว</th>
+                    <th className="px-4 py-3">คงเหลือ</th>
+                    <th className="px-4 py-3">วันนี้</th>
+                    <th className="px-4 py-3">เดือนนี้</th>
+                    <th className="px-4 py-3">ปีงบ</th>
+                    <th className="px-4 py-3">โรคหลัก</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {executiveRows.map((row) => (
+                    <tr key={row.unitId} className="border-t border-[#edf2ed]">
+                      <td className="px-4 py-4 font-semibold text-[#20382f]">{row.unitName}</td>
+                      <td className="px-4 py-4 text-[#20382f]">{row.total}</td>
+                      <td className="px-4 py-4 text-[#20382f]">{row.completed}</td>
+                      <td className="px-4 py-4 text-[#20382f]">{row.remaining}</td>
+                      <td className="px-4 py-4 text-[#20382f]">{row.visitsToday}</td>
+                      <td className="px-4 py-4 text-[#20382f]">{row.visitsMonth}</td>
+                      <td className="px-4 py-4 text-[#20382f]">{row.visitsFiscalYear}</td>
+                      <td className="px-4 py-4 text-[#20382f]">
+                        {row.topDiseaseLabel}
+                        {row.topDiseaseCount ? ` (${row.topDiseaseCount})` : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </main>
     );
   }
