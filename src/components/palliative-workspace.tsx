@@ -244,6 +244,7 @@ function getSelfNavigationActions(role?: UserRole) {
       { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
       { href: "/executive", label: "ไปหน้าผู้บริหาร" },
       { href: "/card-room", label: "ไปหน้าห้องบัตร" },
+      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
     ];
   }
   if (role === "hospital_case_manager") {
@@ -252,6 +253,7 @@ function getSelfNavigationActions(role?: UserRole) {
       { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
       { href: "/executive", label: "ไปหน้าผู้บริหาร" },
       { href: "/card-room", label: "ไปหน้าห้องบัตร" },
+      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
     ];
   }
   if (role === "hospital_executive") {
@@ -261,13 +263,22 @@ function getSelfNavigationActions(role?: UserRole) {
     return [{ href: "/card-room", label: "ไปหน้าห้องบัตร" }];
   }
   if (role === "unit_manager") {
-    return [{ href: "/unit-overview", label: "ไปหน้าภาพรวมหน่วย" }];
+    return [
+      { href: "/unit-overview", label: "ไปหน้าภาพรวมหน่วย" },
+      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+    ];
   }
   if (role === "unit_nurse") {
-    return [{ href: "/nurse", label: "ไปหน้าพยาบาลหน่วย" }];
+    return [
+      { href: "/nurse", label: "ไปหน้าพยาบาลหน่วย" },
+      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+    ];
   }
   if (role === "hospital_pcu") {
-    return [{ href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" }];
+    return [
+      { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
+      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+    ];
   }
   return [];
 }
@@ -463,6 +474,17 @@ export function PalliativeWorkspace({
     initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
   );
   const [cardRoomDate, setCardRoomDate] = useState(initialSnapshot.currentDate);
+  const [dailyVisitDate, setDailyVisitDate] = useState(initialSnapshot.currentDate);
+  const [editingVisitId, setEditingVisitId] = useState<number | null>(null);
+  const [dailyVisitDraft, setDailyVisitDraft] = useState({
+    visitDate: initialSnapshot.currentDate,
+    authenCode: "",
+    symptoms: "",
+    note: "",
+  });
+  const [dailyVisitChecklist, setDailyVisitChecklist] = useState<VisitChecklist>(
+    defaultVisitChecklistState,
+  );
   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
   const [newUserDraft, setNewUserDraft] = useState({
     username: "",
@@ -500,11 +522,20 @@ export function PalliativeWorkspace({
     currentUser?.role === "hospital_card_room" ||
     currentUser?.role === "hospital_admin" ||
     currentUser?.role === "hospital_case_manager";
+  const canViewDailyVisits =
+    currentUser?.role === "hospital_admin" ||
+    currentUser?.role === "hospital_case_manager" ||
+    currentUser?.role === "hospital_pcu" ||
+    currentUser?.role === "unit_manager" ||
+    currentUser?.role === "unit_nurse";
   const pageNavigationActions = useMemo(() => {
     if (
       currentUser?.role !== "hospital_admin" &&
       currentUser?.role !== "hospital_case_manager" &&
-      currentUser?.role !== "hospital_executive"
+      currentUser?.role !== "hospital_executive" &&
+      currentUser?.role !== "hospital_pcu" &&
+      currentUser?.role !== "unit_manager" &&
+      currentUser?.role !== "unit_nurse"
     ) {
       return [];
     }
@@ -888,6 +919,36 @@ export function PalliativeWorkspace({
       }];
     });
   }, [cardRoomDate, snapshot.patients, snapshot.units, snapshot.visits]);
+  const dailyVisitRows = useMemo(() => {
+    return snapshot.visits
+      .filter((visit) => {
+        if (visit.visitDate !== dailyVisitDate) return false;
+        if (isHospitalBoard) return true;
+        return visit.unitId === currentUser?.unitId;
+      })
+      .map((visit) => {
+        const patient = snapshot.patients.find((item) => item.id === visit.patientId);
+        const unit = snapshot.units.find((item) => item.id === visit.unitId);
+        return {
+          visit,
+          patient,
+          unitName: unit?.name ?? patient?.assignedUnitName ?? visit.unitId,
+        };
+      })
+      .sort(
+        (a, b) =>
+          a.unitName.localeCompare(b.unitName, "th") ||
+          (a.patient?.fullName ?? "").localeCompare(b.patient?.fullName ?? "", "th") ||
+          a.visit.id - b.visit.id,
+      );
+  }, [
+    currentUser?.unitId,
+    dailyVisitDate,
+    isHospitalBoard,
+    snapshot.patients,
+    snapshot.units,
+    snapshot.visits,
+  ]);
 
   useEffect(() => {
     if (!selectedPatient?.hn) {
@@ -1465,6 +1526,47 @@ export function PalliativeWorkspace({
     );
   };
 
+  const startEditDailyVisit = (visit: PalliativeVisit) => {
+    setEditingVisitId(visit.id);
+    setDailyVisitDraft({
+      visitDate: visit.visitDate,
+      authenCode: visit.authenCode ?? "",
+      symptoms: visit.symptoms,
+      note: visit.note,
+    });
+    setDailyVisitChecklist(visit.checklist);
+  };
+
+  const saveDailyVisitEdit = () => {
+    if (!editingVisitId || !currentUser) return;
+    if (!dailyVisitDraft.visitDate) {
+      setNotice("กรุณาระบุวันที่เยี่ยม");
+      return;
+    }
+    if (!dailyVisitDraft.authenCode.trim()) {
+      setNotice("กรุณากรอก Authen code");
+      return;
+    }
+    if (!dailyVisitDraft.symptoms.trim()) {
+      setNotice("กรุณาบันทึกอาการติดตาม");
+      return;
+    }
+
+    run(
+      () =>
+        requestJson(`/api/visits/${editingVisitId}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            ...dailyVisitDraft,
+            checklist: dailyVisitChecklist,
+            actorUserId: currentUser.id,
+          }),
+        }),
+      "แก้ไขข้อมูลที่ส่งแล้ว",
+      () => setEditingVisitId(null),
+    );
+  };
+
   const loadImportFiles = () => {
     setWorking(true);
     setNotice(null);
@@ -1810,6 +1912,216 @@ export function PalliativeWorkspace({
                 </tbody>
               </table>
             </div>
+          </div>
+        </Box>
+      </main>
+    );
+  }
+
+  if (canViewDailyVisits && pathname === "/daily-visits") {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="rounded-[2.4rem] bg-[linear-gradient(135deg,#123047_0%,#2f6f73_55%,#d9eee8_100%)] p-6 text-white shadow-[0_30px_80px_rgba(6,29,43,0.22)] sm:p-8">
+          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-end">
+            <div>
+              <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/85">
+                Daily Submissions
+              </div>
+              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+                ข้อมูลที่ส่งรายวัน
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
+                ดูรายการคนไข้ที่ส่งข้อมูลในวันที่เลือก และแก้ไขข้อมูลเยี่ยมบ้านที่ส่งมาได้ทันที
+              </p>
+            </div>
+            <div className="rounded-[1.8rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="text-xs uppercase tracking-[0.24em] text-white/70">
+                ผู้ใช้งานปัจจุบัน
+              </div>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                <input
+                  value={`${sessionUser.displayName} - ${formatRoleLabel(sessionUser.role)}`}
+                  readOnly
+                  className="w-full rounded-2xl border border-white/20 bg-[#f7fbff] px-4 py-3 text-sm text-[#123047] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  รีเฟรช
+                </button>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white"
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+              {pageNavigationActions.length ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {pageNavigationActions.map((action) => (
+                    <Link
+                      key={action.href}
+                      href={action.href}
+                      className="rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-medium text-white transition hover:bg-white/25"
+                    >
+                      {action.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </header>
+
+        <Box
+          title="รายการที่ส่งในวันที่เลือก"
+          note={isHospitalBoard ? "โรงพยาบาลดูได้ทุกหน่วย" : "รพ.สต./PCU ดูและแก้ไขเฉพาะข้อมูลของหน่วยตัวเอง"}
+        >
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-[#123047]" htmlFor="daily-visit-date">
+                วันที่
+              </label>
+              <input
+                id="daily-visit-date"
+                type="date"
+                value={dailyVisitDate}
+                onChange={(event) => {
+                  setDailyVisitDate(event.target.value);
+                  setEditingVisitId(null);
+                }}
+                className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+              />
+            </div>
+            <div className="rounded-full border border-[#d9e5ec] bg-[#f7fbfd] px-4 py-2 text-sm text-[#5f7486]">
+              พบ {dailyVisitRows.length} รายการ
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {dailyVisitRows.length ? (
+              dailyVisitRows.map(({ visit, patient, unitName }) => {
+                const isEditing = editingVisitId === visit.id;
+                return (
+                  <div key={visit.id} className="rounded-[1.5rem] border border-[#e2edf4] bg-[#fbfdff] p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.18em] text-[#6f8190]">{unitName}</div>
+                        <h3 className="mt-1 text-lg font-semibold text-[#123047]">
+                          {patient?.fullName ?? `Visit #${visit.id}`}
+                        </h3>
+                        <div className="mt-1 text-sm text-[#5f7486]">
+                          HN {patient?.hn ?? "-"} · เลขบัตร {patient?.cid ?? "-"} · ผู้บันทึก {visit.visitorName}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => (isEditing ? setEditingVisitId(null) : startEditDailyVisit(visit))}
+                        className="rounded-2xl bg-[#123047] px-4 py-2 text-sm font-medium text-white"
+                      >
+                        {isEditing ? "ยกเลิกแก้ไข" : "แก้ไขข้อมูล"}
+                      </button>
+                    </div>
+
+                    {isEditing ? (
+                      <div className="mt-4 grid gap-4 rounded-[1.2rem] border border-[#d9e5ec] bg-white p-4">
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <label className="grid gap-1 text-sm text-[#123047]">
+                            วันที่เยี่ยม
+                            <input
+                              type="date"
+                              value={dailyVisitDraft.visitDate}
+                              onChange={(event) =>
+                                setDailyVisitDraft((draft) => ({ ...draft, visitDate: event.target.value }))
+                              }
+                              className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                            />
+                          </label>
+                          <label className="grid gap-1 text-sm text-[#123047]">
+                            Authen code
+                            <input
+                              value={dailyVisitDraft.authenCode}
+                              onChange={(event) =>
+                                setDailyVisitDraft((draft) => ({ ...draft, authenCode: event.target.value }))
+                              }
+                              className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                            />
+                          </label>
+                        </div>
+                        <label className="grid gap-1 text-sm text-[#123047]">
+                          อาการติดตาม
+                          <textarea
+                            value={dailyVisitDraft.symptoms}
+                            onChange={(event) =>
+                              setDailyVisitDraft((draft) => ({ ...draft, symptoms: event.target.value }))
+                            }
+                            rows={3}
+                            className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                          />
+                        </label>
+                        <label className="grid gap-1 text-sm text-[#123047]">
+                          หมายเหตุ
+                          <textarea
+                            value={dailyVisitDraft.note}
+                            onChange={(event) =>
+                              setDailyVisitDraft((draft) => ({ ...draft, note: event.target.value }))
+                            }
+                            rows={2}
+                            className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                          />
+                        </label>
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                          {Object.entries(visitChecklistLabels).map(([key, label]) => (
+                            <label key={key} className="flex items-center gap-2 rounded-2xl border border-[#e3edf3] bg-[#f7fbfd] px-3 py-2 text-xs text-[#123047]">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(dailyVisitChecklist[key as keyof VisitChecklist])}
+                                onChange={(event) =>
+                                  setDailyVisitChecklist((checklist) => ({
+                                    ...checklist,
+                                    [key]: event.target.checked,
+                                  }))
+                                }
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={saveDailyVisitEdit}
+                          className="w-full rounded-2xl bg-[#0f766e] px-5 py-3 text-sm font-medium text-white sm:w-fit"
+                        >
+                          บันทึกการแก้ไข
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-4 grid gap-3 md:grid-cols-[0.7fr_1fr_1fr]">
+                        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]">
+                          <div className="text-xs text-[#6f8190]">Authen</div>
+                          {visit.authenCode || "-"}
+                        </div>
+                        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]">
+                          <div className="text-xs text-[#6f8190]">อาการ</div>
+                          {visit.symptoms || "-"}
+                        </div>
+                        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]">
+                          <div className="text-xs text-[#6f8190]">หมายเหตุ</div>
+                          {visit.note || "-"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-[#d9e5ec] px-4 py-10 text-center text-sm text-[#6f8190]">
+                ยังไม่มีข้อมูลที่ส่งในวันที่เลือก
+              </div>
+            )}
           </div>
         </Box>
       </main>

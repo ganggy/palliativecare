@@ -1233,6 +1233,47 @@ export function addVisitRecord(
   return clone(visit);
 }
 
+export function updateVisitRecord(
+  visitId: number,
+  input: {
+    actorUserId: string;
+    visitDate: string;
+    authenCode?: string;
+    symptoms: string;
+    note: string;
+    checklist: VisitChecklist;
+  },
+) {
+  const actor = users.find((item) => item.id === input.actorUserId);
+  const visit = visits.find((item) => item.id === visitId);
+  if (!actor || !visit) throw new Error("ไม่พบข้อมูลการเยี่ยมหรือผู้ใช้งาน");
+  const canEditAll =
+    actor.role === "hospital_admin" || actor.role === "hospital_case_manager";
+  if (!canEditAll && actor.unitId !== visit.unitId) {
+    throw new Error("แก้ไขได้เฉพาะข้อมูลของหน่วยตัวเอง");
+  }
+
+  validateVisitSubmission({
+    visitDate: input.visitDate,
+    authenCode: input.authenCode,
+    symptoms: input.symptoms,
+    photosCount: visit.photos.length,
+  });
+
+  visit.visitDate = input.visitDate;
+  visit.authenCode = input.authenCode?.trim();
+  visit.symptoms = input.symptoms.trim();
+  visit.note = input.note.trim();
+  visit.checklist = normalizeVisitChecklist(input.checklist, {
+    hasPhoto: visit.photos.length > 0,
+    hasSymptoms: Boolean(input.symptoms.trim()),
+  });
+
+  const patient = patients.find((item) => item.id === visit.patientId);
+  if (patient) refreshPatientMetrics(patient);
+  return clone(visit);
+}
+
 export function addCommentRecord(
   patientId: number,
   input: {

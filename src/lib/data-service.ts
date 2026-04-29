@@ -23,6 +23,7 @@ import {
   renameUser,
   updateUserByAdmin,
   updatePatientRecord,
+  updateVisitRecord,
 } from "./mock-store";
 import {
   buildClaimChecklist,
@@ -2422,6 +2423,112 @@ export async function saveVisit(
       nextServiceMonth >= 6 ? "completed" : "active",
       JSON.stringify(checklistState),
       patientId,
+    ],
+  );
+
+  return { ok: true };
+}
+
+export async function updateVisit(
+  visitId: number,
+  input: {
+    actorUserId: string;
+    visitDate: string;
+    authenCode?: string;
+    symptoms: string;
+    note: string;
+    checklist: VisitChecklist;
+  },
+) {
+  if (!isDbConfigured("palliative")) {
+    return updateVisitRecord(visitId, input);
+  }
+
+  const snapshot = await getAppSnapshot();
+  const actor = snapshot.users.find((user) => user.id === input.actorUserId);
+  const currentVisit = snapshot.visits.find((visit) => visit.id === visitId);
+  if (!actor || !currentVisit) throw new Error("ไม่พบข้อมูลการเยี่ยมหรือผู้ใช้งาน");
+  const canEditAll =
+    actor.role === "hospital_admin" || actor.role === "hospital_case_manager";
+  if (!canEditAll && actor.unitId !== currentVisit.unitId) {
+    throw new Error("แก้ไขได้เฉพาะข้อมูลของหน่วยตัวเอง");
+  }
+
+  validateVisitSubmission({
+    visitDate: input.visitDate,
+    authenCode: input.authenCode,
+    symptoms: input.symptoms,
+    photosCount: currentVisit.photos.length,
+  });
+
+  const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
+    hasPhoto: currentVisit.photos.length > 0,
+    hasSymptoms: Boolean(input.symptoms.trim()),
+  });
+  const pool = getPool("palliative");
+  await pool.query(
+    `
+      UPDATE palliative_visits
+      SET visit_date = ?,
+          authen_code = ?,
+          symptoms = ?,
+          note = ?,
+          checklist_json = ?
+      WHERE id = ?
+    `,
+    [
+      input.visitDate,
+      input.authenCode?.trim() || null,
+      input.symptoms.trim(),
+      input.note.trim(),
+      JSON.stringify(normalizedChecklist),
+      visitId,
+    ],
+  );
+
+  const [visitRows] = await pool.query(
+    `
+      SELECT visit_date AS visitDate, authen_code AS authenCode, photos_json AS photosJson
+      FROM palliative_visits
+      WHERE patient_id = ?
+      ORDER BY visit_date ASC, id ASC
+    `,
+    [currentVisit.patientId],
+  );
+  const patientVisits = visitRows as Array<{
+    visitDate: string;
+    authenCode?: string | null;
+    photosJson?: string | null;
+  }>;
+  const serviceMonthCount = patientVisits.length;
+  const lastVisitAt = patientVisits[patientVisits.length - 1]?.visitDate ?? null;
+  const hasAuthentication = patientVisits.some((visit) => Boolean(visit.authenCode));
+  const hasPhoto = patientVisits.some(
+    (visit) => parseJson<Array<unknown>>(visit.photosJson, []).length > 0,
+  );
+  const patient = snapshot.patients.find((item) => item.id === currentVisit.patientId);
+  const checklistState = buildClaimChecklist({
+    ...(patient?.claimChecklist ?? buildClaimChecklist({})),
+    hasAuthentication,
+    hasHomeVisitReport: serviceMonthCount > 0,
+    hasPhoto,
+  });
+
+  await pool.query(
+    `
+      UPDATE palliative_registry
+      SET last_visit_at = ?,
+          service_month_count = ?,
+          care_status = ?,
+          claim_checklist_json = ?
+      WHERE id = ?
+    `,
+    [
+      lastVisitAt,
+      serviceMonthCount,
+      serviceMonthCount >= 6 ? "completed" : serviceMonthCount > 0 ? "active" : "registered",
+      JSON.stringify(checklistState),
+      currentVisit.patientId,
     ],
   );
 
