@@ -464,8 +464,8 @@ export function PalliativeWorkspace({
   const [authToken, setAuthToken] = useState("");
   const [sessionUser, setSessionUser] = useState<AuthSessionUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [loginUsername, setLoginUsername] = useState("hosadmin");
-  const [loginPassword, setLoginPassword] = useState("admin123");
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [registerUsername, setRegisterUsername] = useState("");
   const [registerDisplayName, setRegisterDisplayName] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -1681,9 +1681,6 @@ export function PalliativeWorkspace({
           <h1 className="text-3xl font-semibold tracking-[-0.04em]">เข้าสู่ระบบ Palliative Home Visit</h1>
           <p className="mt-2 text-sm text-white/85">
             ผู้ใช้ใหม่สมัครสมาชิกได้ที่ฟอร์มด้านล่าง แล้วรอ Admin หรือ Case Manager อนุมัติ
-          </p>
-          <p className="mt-2 text-xs text-white/75">
-            บัญชีเริ่มต้น: `hosadmin` รหัสผ่าน `admin123`
           </p>
         </section>
         <section className="grid gap-6 md:grid-cols-2">
