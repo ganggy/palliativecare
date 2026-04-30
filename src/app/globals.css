@@ -13,6 +13,8 @@
   --danger: #b42345;
   --shadow-soft: 0 22px 60px rgba(8, 33, 51, 0.09);
   --shadow-lift: 0 28px 75px rgba(8, 33, 51, 0.14);
+  --font-thai-sans: "Noto Sans Thai", "Leelawadee UI", "Tahoma", sans-serif;
+  --font-geist-mono: "Cascadia Mono", "Consolas", monospace;
 }
 
 @theme inline {
