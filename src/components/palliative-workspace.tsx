@@ -554,6 +554,7 @@ export function PalliativeWorkspace({
   const [nurseSearch, setNurseSearch] = useState("");
   const [nursePatientPage, setNursePatientPage] = useState(1);
   const [registrySearch, setRegistrySearch] = useState("");
+  const [registryUnitFilter, setRegistryUnitFilter] = useState("all");
   const [registryPage, setRegistryPage] = useState(1);
   const [pendingNursePatientId, setPendingNursePatientId] = useState<number | null>(null);
   const [patientCardFiles, setPatientCardFiles] = useState<Array<FileList | null>>([null]);
@@ -674,15 +675,30 @@ export function PalliativeWorkspace({
         ? registryTrackingPatients
         : registryCompletedPatients
       : visiblePatients;
+  const registryUnitOptions = useMemo(
+    () => snapshot.units.filter((unit) => unit.kind !== "hospital"),
+    [snapshot.units],
+  );
+  const selectedRegistryUnitName =
+    registryUnitFilter === "all"
+      ? "ทุกหน่วย"
+      : registryUnitOptions.find((unit) => unit.id === registryUnitFilter)?.name ??
+        "ไม่พบหน่วย";
   const registryFilteredPatients = useMemo(() => {
+    const unitFilteredPatients =
+      isHospitalBoard && registryUnitFilter !== "all"
+        ? registryBasePatients.filter(
+            (patient) => patient.assignedUnitId === registryUnitFilter,
+          )
+        : registryBasePatients;
     const keyword = registrySearch.trim().toLowerCase();
-    if (!keyword) return registryBasePatients;
-    return registryBasePatients.filter((patient) => {
+    if (!keyword) return unitFilteredPatients;
+    return unitFilteredPatients.filter((patient) => {
       const haystack =
         `${patient.hn} ${patient.cid} ${patient.fullName} ${patient.primaryDxCode} ${patient.primaryDxName} ${patient.assignedUnitName}`.toLowerCase();
       return haystack.includes(keyword);
     });
-  }, [registryBasePatients, registrySearch]);
+  }, [isHospitalBoard, registryBasePatients, registrySearch, registryUnitFilter]);
   const registryPatientsPerPage = 21;
   const registryPageCount = Math.max(
     1,
@@ -3399,8 +3415,8 @@ export function PalliativeWorkspace({
                 </div>
               </>
             ) : null}
-            <div className="mb-4 flex flex-col gap-3 rounded-[1.3rem] border border-[#dce9ef] bg-[#f8fcfe] p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 flex-1">
+            <div className="mb-4 flex flex-col gap-3 rounded-[1.3rem] border border-[#dce9ef] bg-[#f8fcfe] p-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid min-w-0 flex-1 gap-2 md:grid-cols-[minmax(0,1fr)_220px]">
                 <label className="sr-only" htmlFor="registry-patient-search">
                   ค้นหาคนไข้
                 </label>
@@ -3411,11 +3427,39 @@ export function PalliativeWorkspace({
                     setRegistrySearch(event.target.value);
                     setRegistryPage(1);
                   }}
-                  placeholder="ค้นหา HN / CID / ชื่อ / Dx / หน่วย"
+                  placeholder="ค้นหา HN / CID / ชื่อ / Dx"
                   className="w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
                 />
+                {isHospitalBoard ? (
+                  <>
+                    <label className="sr-only" htmlFor="registry-unit-filter">
+                      กรองตามหน่วย
+                    </label>
+                    <select
+                      id="registry-unit-filter"
+                      value={registryUnitFilter}
+                      onChange={(event) => {
+                        setRegistryUnitFilter(event.target.value);
+                        setRegistryPage(1);
+                      }}
+                      className="w-full rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm text-[#123047] outline-none"
+                    >
+                      <option value="all">ทุกหน่วย</option>
+                      {registryUnitOptions.map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-[#5f7486]">
+                {isHospitalBoard ? (
+                  <span className="rounded-full border border-[#d9e5ec] bg-white px-3 py-1.5">
+                    หน่วย {selectedRegistryUnitName}
+                  </span>
+                ) : null}
                 <span className="rounded-full border border-[#d9e5ec] bg-white px-3 py-1.5">
                   แสดง {registryPageItems.length} จาก {registryFilteredPatients.length} ราย
                 </span>
