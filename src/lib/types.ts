@@ -221,6 +221,7 @@ export interface PalliativePatient {
   cid: string;
   fullName: string;
   age: number;
+  birthday?: string;
   sex: "M" | "F";
   assignedUnitId: string;
   assignedUnitName: string;
@@ -282,6 +283,7 @@ export interface HosCandidate {
   cid: string;
   fullName: string;
   age: number;
+  birthday?: string;
   sex: "M" | "F";
   unitId: string;
   clinicName: string;

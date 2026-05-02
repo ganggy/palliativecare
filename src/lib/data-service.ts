@@ -75,6 +75,7 @@ interface CandidateRow {
   cid?: unknown;
   fullname?: unknown;
   age?: unknown;
+  birthday?: unknown;
   sex?: unknown;
   unitId?: unknown;
   clinicName?: unknown;
@@ -116,7 +117,9 @@ interface DbPatientRow {
   cid: string;
   fullName: string;
   age: number;
+  birthday?: string | null;
   sex: "M" | "F";
+  insuranceGroup?: string | null;
   assignedUnitId: string;
   assignedUnitName: string;
   assignedUnitKind: PalliativePatient["assignedUnitKind"];
@@ -472,6 +475,30 @@ async function ensureVisitClinicalSchema() {
   }
 }
 
+async function ensureRegistryDemographicsSchema() {
+  if (!isDbConfigured("palliative")) return;
+  const pool = getPool("palliative");
+  const [columnsRaw] = await pool.query(`
+    SELECT COLUMN_NAME
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'palliative_registry'
+  `);
+  const columns = new Set(
+    (columnsRaw as Array<{ COLUMN_NAME: string }>).map((row) => row.COLUMN_NAME),
+  );
+  if (!columns.has("birthday")) {
+    await pool.query(
+      `ALTER TABLE palliative_registry ADD COLUMN birthday DATE NULL AFTER age`,
+    );
+  }
+  if (!columns.has("insurance_group")) {
+    await pool.query(
+      `ALTER TABLE palliative_registry ADD COLUMN insurance_group VARCHAR(50) NULL AFTER sex`,
+    );
+  }
+}
+
 function buildSnapshotFromCollections(
   users: AppUser[],
   units: ServiceUnit[],
@@ -609,6 +636,7 @@ function buildSnapshotFromCollections(
 async function loadDbSnapshot(): Promise<AppSnapshot> {
   await ensureAuthSchema();
   await ensureVisitClinicalSchema();
+  await ensureRegistryDemographicsSchema();
   const pool = getPool("palliative");
   const [unitRows] = await pool.query(
     `SELECT id, code, short_name AS shortName, name, kind, color, description FROM palliative_units ORDER BY sort_order ASC, name ASC`,
@@ -636,7 +664,9 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
       cid,
       full_name AS fullName,
       age,
+      birthday,
       sex,
+      insurance_group AS insuranceGroup,
       assigned_unit_id AS assignedUnitId,
       assigned_unit_name AS assignedUnitName,
       assigned_unit_kind AS assignedUnitKind,
@@ -723,6 +753,8 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
   const unitKindById = new Map(units.map((unit) => [unit.id, unit.kind] as const));
   const patients: PalliativePatient[] = (patientRows as DbPatientRow[]).map((row) => ({
     ...row,
+    birthday: asDateKey(row.birthday) || undefined,
+    insuranceGroup: row.insuranceGroup ?? undefined,
     assignedUnitName: unitNameById.get(row.assignedUnitId) ?? row.assignedUnitName,
     assignedUnitKind:
       (unitKindById.get(row.assignedUnitId) as PalliativePatient["assignedUnitKind"] | undefined) ??
@@ -1079,6 +1111,7 @@ export async function getHosCandidates(
         cid: patient.cid,
         fullName: patient.fullName,
         age: patient.age,
+        birthday: patient.birthday,
         sex: patient.sex,
         unitId: patient.assignedUnitId,
         clinicName: patient.assignedUnitName,
@@ -1149,6 +1182,7 @@ export async function getHosCandidates(
         cid: String(row.cid ?? ""),
         fullName: String(row.fullname ?? ""),
         age: Number.parseInt(String(row.age ?? "0"), 10) || 0,
+        birthday: asDateKey(row.birthday) || undefined,
         sex: row.sex === "M" ? "M" : "F",
         unitId: String(row.unitId ?? rule.unitId),
         clinicName: String(row.clinicName ?? rule.clinicName),
@@ -2050,12 +2084,13 @@ export async function getHosPatientDetail(
             SELECT
               o.vstdate AS visitDate,
               o.vn,
-              COALESCE(vs.pttype, '') AS pttype,
+              COALESCE(pt.hipdata_code, vs.pttype, '') AS pttype,
               COALESCE(o.main_dep, '') AS mainDep,
               COALESCE(vs.pdx, '') AS pdx,
               COALESCE(i.name, '') AS pdxName
             FROM ovst o
             LEFT JOIN vn_stat vs ON vs.vn = o.vn
+            LEFT JOIN pttype pt ON pt.pttype = vs.pttype
             LEFT JOIN icd101 i
               ON i.code = vs.pdx
               OR i.code = UPPER(REPLACE(vs.pdx, '.', ''))
@@ -2165,19 +2200,22 @@ export async function registerHosCandidate(
   const checklistJson = JSON.stringify(
     buildClaimChecklist(candidate.claimChecklist),
   );
+  await ensureRegistryDemographicsSchema();
   await pool.query(
     `
       INSERT INTO palliative_registry (
-        hn, cid, full_name, age, sex, assigned_unit_id, assigned_unit_name, assigned_unit_kind,
+        hn, cid, full_name, age, birthday, sex, insurance_group, assigned_unit_id, assigned_unit_name, assigned_unit_kind,
         primary_dx_code, primary_dx_name, care_status, eligible_reason, phone, address, notes,
         registered_at, registered_by_user_id, next_visit_at, service_month_count,
         visit_window_start, visit_window_end, claim_checklist_json, discharged_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         full_name = VALUES(full_name),
         age = VALUES(age),
+        birthday = VALUES(birthday),
         sex = VALUES(sex),
+        insurance_group = VALUES(insurance_group),
         assigned_unit_id = VALUES(assigned_unit_id),
         assigned_unit_name = VALUES(assigned_unit_name),
         assigned_unit_kind = VALUES(assigned_unit_kind),
@@ -2200,7 +2238,9 @@ export async function registerHosCandidate(
       candidate.cid,
       candidate.fullName,
       candidate.age,
+      candidate.birthday ?? null,
       candidate.sex,
+      candidate.insuranceGroup ?? null,
       unit.id,
       unit.name,
       unit.kind,

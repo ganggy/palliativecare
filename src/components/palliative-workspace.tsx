@@ -316,7 +316,7 @@ function createAcpDraft(
     patientCid: patient?.cid ?? "",
     patientAddress: patient?.address ?? "",
     patientPhone: patient?.phone ?? "",
-    patientBirthDate: "",
+    patientBirthDate: patient?.birthday ?? "",
     regularHospital: patient?.assignedUnitName ?? "",
     insurance: patient?.insuranceGroup ?? "",
     coPlannerName: "",
@@ -576,9 +576,10 @@ async function makeAcpSnapshotJpeg(input: {
           <div class="field"><div class="label">HN / Visit</div><div class="value">${escapeHtml(patient?.hn)} / ${escapeHtml(visit ? formatDate(visit.visitDate) : "-")}</div></div>
           <div class="field"><div class="label">อายุ</div><div class="value">${escapeHtml(form.patientAge)}</div></div>
           <div class="field"><div class="label">เลขบัตรประชาชน</div><div class="value">${escapeHtml(form.patientCid || patient?.cid)}</div></div>
+          <div class="field"><div class="label">วันเดือนปีเกิด</div><div class="value">${escapeHtml(formatDate(form.patientBirthDate))}</div></div>
+          <div class="field"><div class="label">สิทธิรักษา</div><div class="value">${escapeHtml(form.insurance)}</div></div>
           <div class="field wide"><div class="label">ที่อยู่</div><div class="value">${escapeHtml(form.patientAddress)}</div></div>
           <div class="field"><div class="label">โทรศัพท์</div><div class="value">${escapeHtml(form.patientPhone)}</div></div>
-          <div class="field"><div class="label">สิทธิรักษา</div><div class="value">${escapeHtml(form.insurance)}</div></div>
           <div class="field"><div class="label">ผู้ร่วมวางแผน</div><div class="value">${escapeHtml(form.coPlannerName)}</div></div>
           <div class="field"><div class="label">ความสัมพันธ์/โทรศัพท์</div><div class="value">${escapeHtml(form.coPlannerRelation)} ${escapeHtml(form.coPlannerPhone)}</div></div>
         </div>
@@ -1476,6 +1477,50 @@ export function PalliativeWorkspace({
       cancelled = true;
     };
   }, [selectedPatient?.hn]);
+
+  useEffect(() => {
+    if (nurseTab !== "acp" || !selectedPatient?.hn) return;
+    if (selectedPatient.birthday && selectedPatient.insuranceGroup) return;
+
+    let cancelled = false;
+    void requestJson(
+      `/api/hosxp/patient?hn=${encodeURIComponent(selectedPatient.hn)}`,
+    )
+      .then((payload) => {
+        if (cancelled) return;
+        const hos = payload as {
+          profile?: { birthday?: string };
+          serviceHistory?: Array<{ pttype?: string }>;
+        };
+        const latestInsurance =
+          hos.serviceHistory?.find((item) => item.pttype)?.pttype ?? "";
+        setAcpDraft((draft) => ({
+          ...draft,
+          patientBirthDate:
+            draft.patientBirthDate ||
+            selectedPatient.birthday ||
+            hos.profile?.birthday ||
+            "",
+          insurance:
+            draft.insurance ||
+            selectedPatient.insuranceGroup ||
+            latestInsurance ||
+            "",
+        }));
+      })
+      .catch(() => {
+        // If HOSXP is unavailable, keep the editable form values as-is.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    nurseTab,
+    selectedPatient?.birthday,
+    selectedPatient?.hn,
+    selectedPatient?.insuranceGroup,
+  ]);
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem("palliative-auth-token") ?? "";
@@ -4794,10 +4839,12 @@ export function PalliativeWorkspace({
               {selectedAcpVisit?.advanceCarePlan ? (
                 <a
                   href={selectedAcpVisit.advanceCarePlan.url}
+                  download={selectedAcpVisit.advanceCarePlan.fileName}
                   target="_blank"
+                  rel="noreferrer"
                   className="block rounded-2xl border border-[#0f766e33] bg-[#ebfaf6] px-4 py-3 text-sm font-medium text-[#0f766e]"
                 >
-                  เปิด PDF ที่บันทึกแล้ว: {selectedAcpVisit.advanceCarePlan.fileName}
+                  ดาวน์โหลด PDF ที่บันทึกแล้ว: {selectedAcpVisit.advanceCarePlan.fileName}
                 </a>
               ) : null}
             </div>
@@ -5300,10 +5347,12 @@ export function PalliativeWorkspace({
                             {visit.advanceCarePlan ? (
                               <a
                                 href={visit.advanceCarePlan.url}
+                                download={visit.advanceCarePlan.fileName}
                                 target="_blank"
+                                rel="noreferrer"
                                 className="mt-3 inline-flex rounded-full border border-[#0f766e33] bg-[#ebfaf6] px-3 py-1 text-xs font-medium text-[#0f766e]"
                               >
-                                เปิด PDF ACP/LW
+                                ดาวน์โหลด PDF ACP/LW
                               </a>
                             ) : null}
                             <div className="mt-3 flex flex-wrap gap-2">
