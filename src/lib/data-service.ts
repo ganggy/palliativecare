@@ -2913,6 +2913,14 @@ export async function adminCreateUser(input: {
   if (!actor || actor.id !== input.actorUserId || !roleCanManageUsers(actor.role)) {
     throw new Error("เฉพาะ admin หรือ case manager เท่านั้น");
   }
+  if (
+    input.role &&
+    !roleIsAdmin(actor.role) &&
+    (input.role === "hospital_admin" ||
+      input.role === "hospital_case_manager")
+  ) {
+    throw new Error("ไม่มีสิทธิ์แก้เป็น role นี้");
+  }
 
   if (!isDbConfigured("palliative")) {
     return createUserByAdmin({
@@ -2966,6 +2974,7 @@ export async function adminUpdateUser(input: {
   actorUserId: string;
   token: string;
   targetUserId: string;
+  username?: string;
   displayName?: string;
   role?: UserRole;
   unitId?: string;
@@ -2976,9 +2985,18 @@ export async function adminUpdateUser(input: {
   if (!actor || actor.id !== input.actorUserId || !roleCanManageUsers(actor.role)) {
     throw new Error("เฉพาะ admin หรือ case manager เท่านั้น");
   }
+  if (
+    input.role &&
+    !roleIsAdmin(actor.role) &&
+    (input.role === "hospital_admin" ||
+      input.role === "hospital_case_manager")
+  ) {
+    throw new Error("ไม่มีสิทธิ์แก้เป็น role นี้");
+  }
 
   if (!isDbConfigured("palliative")) {
     return updateUserByAdmin(input.targetUserId, {
+      username: input.username,
       displayName: input.displayName,
       role: input.role,
       unitId: input.unitId,
@@ -2989,10 +3007,24 @@ export async function adminUpdateUser(input: {
 
   await ensureAuthSchema();
   const pool = getPool("palliative");
+  const username = input.username?.trim().toLowerCase();
+  if (input.username !== undefined && !username) {
+    throw new Error("กรุณาระบุ username");
+  }
+  if (username) {
+    const [existsRows] = await pool.query(
+      `SELECT id FROM palliative_users WHERE LOWER(username) = LOWER(?) AND id <> ? LIMIT 1`,
+      [username, input.targetUserId],
+    );
+    if ((existsRows as Array<{ id: string }>).length) {
+      throw new Error("username นี้มีในระบบแล้ว");
+    }
+  }
   await pool.query(
     `
       UPDATE palliative_users
       SET
+        username = COALESCE(?, username),
         display_name = COALESCE(?, display_name),
         role = COALESCE(?, role),
         unit_id = COALESCE(?, unit_id),
@@ -3006,8 +3038,9 @@ export async function adminUpdateUser(input: {
           ELSE approval_status
         END
       WHERE id = ?
-    `,
+  `,
     [
+      username || null,
       input.displayName?.trim() || null,
       input.role ?? null,
       input.unitId ?? null,

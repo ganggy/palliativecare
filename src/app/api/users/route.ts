@@ -58,6 +58,7 @@ export async function PATCH(request: Request) {
       actorUserId: String(body.actorUserId ?? ""),
       token,
       targetUserId: String(body.targetUserId ?? ""),
+      username: typeof body.username === "string" ? body.username : undefined,
       displayName:
         typeof body.displayName === "string" ? body.displayName : undefined,
       role: body.role,

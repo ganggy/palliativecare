@@ -998,6 +998,7 @@ export function createUserByAdmin(input: {
 export function updateUserByAdmin(
   userId: string,
   patch: Partial<{
+    username: string;
     displayName: string;
     role: UserRole;
     unitId: string;
@@ -1008,6 +1009,19 @@ export function updateUserByAdmin(
   const user = users.find((item) => item.id === userId);
   const meta = user ? authMetaByUserId.get(user.id) : null;
   if (!user || !meta) throw new Error("ไม่พบผู้ใช้งาน");
+  if (patch.username !== undefined) {
+    const username = patch.username.trim().toLowerCase();
+    if (!username) throw new Error("กรุณาระบุ username");
+    if (
+      users.some(
+        (item) =>
+          item.id !== userId && item.username.toLowerCase() === username,
+      )
+    ) {
+      throw new Error("username นี้มีในระบบแล้ว");
+    }
+    user.username = username;
+  }
   if (patch.displayName !== undefined) user.displayName = patch.displayName.trim() || user.displayName;
   if (patch.role !== undefined) user.role = patch.role;
   if (patch.unitId !== undefined) user.unitId = patch.unitId;

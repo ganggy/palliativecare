@@ -26,6 +26,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         actorUserId: actor.id,
         token,
         targetUserId: id,
+        username: typeof body.username === "string" ? body.username : undefined,
         displayName: body.displayName,
         role: body.role,
         unitId: body.unitId,

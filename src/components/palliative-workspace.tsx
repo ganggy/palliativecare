@@ -494,6 +494,15 @@ export function PalliativeWorkspace({
     unitId: initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
     active: true,
   });
+  const [editingUserId, setEditingUserId] = useState("");
+  const [editingUserDraft, setEditingUserDraft] = useState({
+    username: "",
+    displayName: "",
+    password: "",
+    role: "unit_nurse" as UserRole,
+    unitId: initialSnapshot.units.find((unit) => unit.kind !== "hospital")?.id ?? "",
+    active: true,
+  });
   const [userManagementTab, setUserManagementTab] =
     useState<UserManagementTab>("members");
 
@@ -1311,6 +1320,61 @@ export function PalliativeWorkspace({
           authToken,
         ),
       "อัปเดตสถานะผู้ใช้แล้ว",
+    );
+  };
+
+  const startEditingUser = (user: AppSnapshot["users"][number]) => {
+    setEditingUserId(user.id);
+    setEditingUserDraft({
+      username: user.username,
+      displayName: user.displayName,
+      password: "",
+      role: user.role,
+      unitId: user.unitId,
+      active: user.active,
+    });
+  };
+
+  const saveEditingUser = () => {
+    if (!sessionUser || !authToken || !canManageUsers || !editingUserId) return;
+    if (!editingUserDraft.username.trim() || !editingUserDraft.displayName.trim()) {
+      setNotice("กรุณากรอก username และชื่อที่แสดง");
+      return;
+    }
+    if (!manageableRoleOptions.some((option) => option.value === editingUserDraft.role)) {
+      setNotice("สิทธิ์ของคุณไม่สามารถแก้เป็น role นี้ได้");
+      return;
+    }
+    if (editingUserDraft.password && editingUserDraft.password.trim().length < 6) {
+      setNotice("รหัสผ่านต้องอย่างน้อย 6 ตัวอักษร");
+      return;
+    }
+    run(
+      () =>
+        requestJson(
+          "/api/users",
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              actorUserId: sessionUser.id,
+              targetUserId: editingUserId,
+              username: editingUserDraft.username,
+              displayName: editingUserDraft.displayName,
+              role: editingUserDraft.role,
+              unitId: editingUserDraft.unitId,
+              active: editingUserDraft.active,
+              password: editingUserDraft.password.trim()
+                ? editingUserDraft.password
+                : undefined,
+            }),
+          },
+          authToken,
+        ),
+      "แก้ไขข้อมูลผู้ใช้แล้ว",
+      () => {
+        setEditingUserId("");
+        setEditingUserDraft((prev) => ({ ...prev, password: "" }));
+      },
     );
   };
 
@@ -4560,39 +4624,157 @@ export function PalliativeWorkspace({
                     </div>
 
                     <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                      {snapshot.users.map((user) => (
-                        <div
-                          key={user.id}
-                          className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]"
-                        >
-                          <div className="font-medium">{user.displayName}</div>
-                          <div className="text-xs text-[#6f8190]">
-                            {user.username} · {formatRoleLabel(user.role)} ·{" "}
-                            {user.active ? "Active" : "Inactive"}
-                          </div>
-                          <div className="mt-1 text-xs text-[#7a8b99]">
-                            {snapshot.units.find((unit) => unit.id === user.unitId)?.name ?? user.unitId}
-                          </div>
-                          {canManageUsers && user.id !== sessionUser?.id ? (
-                            <div className="mt-2 flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => quickToggleUserActive(user.id, !user.active)}
-                                className="rounded-xl border border-[#12304733] px-2 py-1 text-xs text-[#123047]"
-                              >
-                                {user.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeUser(user.id)}
-                                className="rounded-xl border border-[#9f123933] px-2 py-1 text-xs text-[#9f1239]"
-                              >
-                                ลบสมาชิก
-                              </button>
+                      {snapshot.users.map((user) => {
+                        const isEditingThisUser = editingUserId === user.id;
+                        return (
+                          <div
+                            key={user.id}
+                            className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="font-medium">{user.displayName}</div>
+                                <div className="text-xs text-[#6f8190]">
+                                  {user.username} · {formatRoleLabel(user.role)} ·{" "}
+                                  {user.active ? "Active" : "Inactive"}
+                                </div>
+                                <div className="mt-1 text-xs text-[#7a8b99]">
+                                  {snapshot.units.find((unit) => unit.id === user.unitId)?.name ?? user.unitId}
+                                </div>
+                              </div>
+                              {user.id === sessionUser?.id ? (
+                                <span className="rounded-full border border-[#d9e5ec] px-2 py-1 text-[11px] text-[#6f8190]">
+                                  บัญชีปัจจุบัน
+                                </span>
+                              ) : null}
                             </div>
-                          ) : null}
-                        </div>
-                      ))}
+                            {isEditingThisUser ? (
+                              <div className="mt-3 grid gap-2 rounded-2xl border border-[#dbe7ef] bg-[#f9fcfe] p-3">
+                                <input
+                                  value={editingUserDraft.username}
+                                  onChange={(event) =>
+                                    setEditingUserDraft((prev) => ({
+                                      ...prev,
+                                      username: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="username"
+                                  className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                                />
+                                <input
+                                  value={editingUserDraft.displayName}
+                                  onChange={(event) =>
+                                    setEditingUserDraft((prev) => ({
+                                      ...prev,
+                                      displayName: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="ชื่อที่แสดง"
+                                  className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                                />
+                                <select
+                                  value={editingUserDraft.role}
+                                  onChange={(event) =>
+                                    setEditingUserDraft((prev) => ({
+                                      ...prev,
+                                      role: event.target.value as UserRole,
+                                    }))
+                                  }
+                                  className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                                >
+                                  {manageableRoleOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={editingUserDraft.unitId}
+                                  onChange={(event) =>
+                                    setEditingUserDraft((prev) => ({
+                                      ...prev,
+                                      unitId: event.target.value,
+                                    }))
+                                  }
+                                  className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                                >
+                                  {snapshot.units.map((unit) => (
+                                    <option key={unit.id} value={unit.id}>
+                                      {unit.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="password"
+                                  value={editingUserDraft.password}
+                                  onChange={(event) =>
+                                    setEditingUserDraft((prev) => ({
+                                      ...prev,
+                                      password: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="รหัสผ่านใหม่ ถ้าไม่เปลี่ยนให้เว้นว่าง"
+                                  className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-sm outline-none"
+                                />
+                                <label className="flex items-center gap-2 text-xs text-[#5f7486]">
+                                  <input
+                                    type="checkbox"
+                                    checked={editingUserDraft.active}
+                                    onChange={(event) =>
+                                      setEditingUserDraft((prev) => ({
+                                        ...prev,
+                                        active: event.target.checked,
+                                      }))
+                                    }
+                                  />
+                                  เปิดใช้งานบัญชีนี้
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={saveEditingUser}
+                                    className="rounded-xl bg-[#123047] px-3 py-2 text-xs font-medium text-white"
+                                  >
+                                    บันทึกข้อมูล
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingUserId("")}
+                                    className="rounded-xl border border-[#12304733] px-3 py-2 text-xs text-[#123047]"
+                                  >
+                                    ยกเลิก
+                                  </button>
+                                </div>
+                              </div>
+                            ) : null}
+                            {canManageUsers && user.id !== sessionUser?.id ? (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingUser(user)}
+                                  className="rounded-xl border border-[#12304733] px-2 py-1 text-xs text-[#123047]"
+                                >
+                                  แก้ไข
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => quickToggleUserActive(user.id, !user.active)}
+                                  className="rounded-xl border border-[#12304733] px-2 py-1 text-xs text-[#123047]"
+                                >
+                                  {user.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeUser(user.id)}
+                                  className="rounded-xl border border-[#9f123933] px-2 py-1 text-xs text-[#9f1239]"
+                                >
+                                  ลบสมาชิก
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
                     </div>
                   </>
                 )}
