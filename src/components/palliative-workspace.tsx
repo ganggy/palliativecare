@@ -502,12 +502,31 @@ export function PalliativeWorkspace({
     setSnapshot(nextSnapshot);
     return nextSnapshot;
   };
+  const activeSnapshotUser = snapshot.users.find((user) => user.id === activeUserId);
+  const sessionSnapshotUser = snapshot.users.find(
+    (user) => user.id === sessionUser?.id,
+  );
+  const preferredSnapshotUser = preferredRole
+    ? snapshot.users.find((user) => user.role === preferredRole)
+    : null;
+  const isPreviewingAnotherUser =
+    Boolean(activeSnapshotUser) && activeSnapshotUser?.id !== sessionSnapshotUser?.id;
+  const canPreviewPreferredRole =
+    sessionSnapshotUser?.role === "hospital_admin" && isPreviewingAnotherUser;
   const currentUser =
-    (preferredRole
-      ? snapshot.users.find((user) => user.role === preferredRole)
+    (activeSnapshotUser &&
+    (!preferredRole ||
+      activeSnapshotUser.role === preferredRole ||
+      canPreviewPreferredRole)
+      ? activeSnapshotUser
       : null) ??
-    snapshot.users.find((user) => user.id === (sessionUser?.id ?? activeUserId)) ??
-    snapshot.users.find((user) => user.id === activeUserId) ??
+    (sessionSnapshotUser &&
+    (!preferredRole || sessionSnapshotUser.role === preferredRole)
+      ? sessionSnapshotUser
+      : null) ??
+    preferredSnapshotUser ??
+    activeSnapshotUser ??
+    sessionSnapshotUser ??
     snapshot.users[0];
   const isHospitalBoard =
     currentUser?.role === "hospital_admin" ||
