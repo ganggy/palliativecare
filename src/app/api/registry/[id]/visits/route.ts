@@ -35,6 +35,7 @@ export async function POST(
     visitorName: body.visitorName,
     unitId: body.unitId,
     checklist: body.checklist,
+    clinical: body.clinical,
     photos,
   });
 

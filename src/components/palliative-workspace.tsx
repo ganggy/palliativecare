@@ -1,6 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import {
+  startTransition,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,6 +23,7 @@ import type {
   PalliativePatient,
   PalliativeVisit,
   UserRole,
+  VisitClinicalAssessment,
   VisitChecklist,
 } from "@/lib/types";
 import { formatRoleLabel, monthKey, REQUIRED_COMPLETE_VISITS } from "@/lib/rules";
@@ -39,6 +47,61 @@ const visitChecklistLabels: Record<keyof VisitChecklist, string> = {
   caregiverBriefed: "อธิบายญาติ/ผู้ดูแล",
   photoCaptured: "ถ่ายภาพผู้ป่วยแล้ว",
 };
+
+const ppsScoreOptions = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
+const painScoreOptions = Array.from({ length: 11 }, (_, index) => index);
+
+const distressingSymptomOptions = [
+  "ไม่มีเลย",
+  "ปวด",
+  "หอบเหนื่อย",
+  "กินไม่ได้",
+  "ท้องผูก (ไม่ถ่ายเกิน 3 วัน)",
+  "นอนไม่หลับ",
+  "อาเจียน",
+  "มีแผลกดทับ",
+  "มีเลือดออกตามร่างกาย",
+  "ซีด อ่อนเพลีย วิงเวียน",
+  "บวม ตามร่างกาย",
+  "ไอ หอบ",
+  "เจ็บแน่นหน้าอก หายใจไม่อิ่ม",
+  "ใส่สายยาง NG Tube for feed",
+  "Retain foley cath",
+  "แผลผ่าตัดหน้าท้อง",
+  "อาการคันผิวหนัง",
+  "แผลมะเร็ง",
+  "มีอาการสะอึก",
+  "อาการเพ้อสับสน",
+  "อาการเบื่ออาหาร",
+  "อาการอ่อนล้า",
+  "ท้องมาน",
+];
+
+const oxygenUseOptions = ["ใช้", "ไม่ใช้", "อื่นๆ"];
+
+const painManagementOptions = [
+  "Morphine ชนิดเม็ด (MST)",
+  "Morphine ชนิด น้ำ",
+  "Morphine ชนิดฉีดใต้ผิวหนัง",
+  "Morphine ชนิดฉีดเข้าเส้นเลือด",
+  "Morphine Syring driver",
+  "น้ำมันกัญชา",
+  "ใช้แผ่น แปะ (fentanyl)",
+  "Morphine ออกฤทธิ์สั้น MOIR",
+  "ไม่ใช้ยา",
+  "อื่นๆ",
+];
+
+const morphineSideEffectOptions = [
+  "อัตราการหายใจ (Respiratory rate) น้อยกว่า 12 ครั้ง",
+  "ความดันโลหิต น้อยกว่า 90/60 มม.ปรอท",
+  "อัตราการเต้นของหัวใจ น้อยกว่า 60 ครั้ง/นาที",
+  "หลับปลุกตื่นยาก หรือไม่ได้ตอบ / sedation score 3 คะแนน",
+  "ท้องผูก",
+  "คลื่นไส้อาเจียน",
+  "ไม่พบอาการผิดปกติ",
+  "อื่นๆระบุ",
+];
 
 type ImportSource = "REP" | "STM";
 
@@ -193,6 +256,99 @@ function splitVisitPhotos(photos: PalliativeVisit["photos"]) {
       (photo) => photo.caption === "follow-up" || !photo.caption,
     ),
   };
+}
+
+function createDefaultClinicalAssessment(): VisitClinicalAssessment {
+  return {
+    temperatureCelsius: "",
+    pulsePerMinute: "",
+    respiratoryRatePerMinute: "",
+    bloodPressureMmHg: "",
+    ppsScore: undefined,
+    esasChiefComplaint: "",
+    distressingSymptoms: [],
+    oxygenUse: "",
+    oxygenUseOther: "",
+    painLocation: "",
+    painScore: undefined,
+    painManagement: [],
+    painManagementOther: "",
+    morphineSideEffects: [],
+    morphineSideEffectsOther: "",
+  };
+}
+
+function toggleListValue(values: string[], value: string, checked: boolean) {
+  if (checked) return values.includes(value) ? values : [...values, value];
+  return values.filter((item) => item !== value);
+}
+
+function formatClinicalList(values?: string[], other?: string) {
+  const items = [...(values ?? [])];
+  if (other?.trim()) items.push(other.trim());
+  return items.length ? items.join(", ") : "-";
+}
+
+function visitClinicalSummaryItems(clinical?: VisitClinicalAssessment) {
+  if (!clinical) return [];
+  return [
+    ["อุณหภูมิ", clinical.temperatureCelsius ? `${clinical.temperatureCelsius} °C` : ""],
+    ["ชีพจร", clinical.pulsePerMinute ? `${clinical.pulsePerMinute} ครั้ง/นาที` : ""],
+    [
+      "หายใจ",
+      clinical.respiratoryRatePerMinute
+        ? `${clinical.respiratoryRatePerMinute} ครั้ง/นาที`
+        : "",
+    ],
+    ["ความดัน", clinical.bloodPressureMmHg],
+    ["PPS", clinical.ppsScore !== undefined ? `${clinical.ppsScore}` : ""],
+    ["ESAS / CC", clinical.esasChiefComplaint],
+    [
+      "อาการรบกวน",
+      formatClinicalList(clinical.distressingSymptoms),
+    ],
+    [
+      "ออกซิเจน",
+      [clinical.oxygenUse, clinical.oxygenUseOther].filter(Boolean).join(" / "),
+    ],
+    ["ตำแหน่งปวด", clinical.painLocation],
+    ["ระดับปวด", clinical.painScore !== undefined ? `${clinical.painScore}/10` : ""],
+    [
+      "จัดการปวด",
+      formatClinicalList(clinical.painManagement, clinical.painManagementOther),
+    ],
+    [
+      "ผลข้างเคียง Morphine",
+      formatClinicalList(
+        clinical.morphineSideEffects,
+        clinical.morphineSideEffectsOther,
+      ),
+    ],
+  ].filter(([, value]) => value && value !== "-");
+}
+
+function VisitClinicalSummary({
+  clinical,
+}: {
+  clinical?: VisitClinicalAssessment;
+}) {
+  const items = visitClinicalSummaryItems(clinical);
+  if (!items.length) return null;
+  return (
+    <div className="mt-3 rounded-2xl border border-[#d9e5ec] bg-[#f7fbfd] p-3">
+      <div className="text-xs uppercase tracking-[0.2em] text-[#6f8190]">
+        ข้อมูลประเมินการเยี่ยม
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {items.map(([label, value]) => (
+          <div key={label} className="rounded-xl bg-white px-3 py-2 text-xs text-[#123047]">
+            <div className="text-[0.68rem] text-[#6f8190]">{label}</div>
+            <div className="mt-1 leading-5">{value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function candidateModeLabel(mode: CandidateFilterMode) {
@@ -448,6 +604,9 @@ export function PalliativeWorkspace({
   const [visitChecklist, setVisitChecklist] = useState<VisitChecklist>(
     defaultVisitChecklistState,
   );
+  const [visitClinical, setVisitClinical] = useState<VisitClinicalAssessment>(
+    createDefaultClinicalAssessment,
+  );
   const [selectedPatientVisitHistory, setSelectedPatientVisitHistory] = useState<
     CandidateVisitHistory[]
   >([]);
@@ -485,6 +644,8 @@ export function PalliativeWorkspace({
   const [dailyVisitChecklist, setDailyVisitChecklist] = useState<VisitChecklist>(
     defaultVisitChecklistState,
   );
+  const [dailyVisitClinical, setDailyVisitClinical] =
+    useState<VisitClinicalAssessment>(createDefaultClinicalAssessment);
   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
   const [newUserDraft, setNewUserDraft] = useState({
     username: "",
@@ -1418,6 +1579,7 @@ export function PalliativeWorkspace({
       note: "",
     });
     setVisitChecklist(defaultVisitChecklistState);
+    setVisitClinical(createDefaultClinicalAssessment());
     setPatientCardFiles([null]);
     setFollowUpFiles([null]);
     setPatientCardFileInputKey((value) => value + 1);
@@ -1458,6 +1620,213 @@ export function PalliativeWorkspace({
         )
         .finally(() => setWorking(false));
     });
+  };
+
+  const renderClinicalAssessmentForm = (
+    value: VisitClinicalAssessment,
+    onChange: Dispatch<SetStateAction<VisitClinicalAssessment>>,
+  ) => {
+    const setField = <K extends keyof VisitClinicalAssessment>(
+      key: K,
+      nextValue: VisitClinicalAssessment[K],
+    ) => onChange((draft) => ({ ...draft, [key]: nextValue }));
+    const toggleField = (
+      key: "distressingSymptoms" | "painManagement" | "morphineSideEffects",
+      option: string,
+      checked: boolean,
+    ) =>
+      onChange((draft) => ({
+        ...draft,
+        [key]: toggleListValue(draft[key] ?? [], option, checked),
+      }));
+
+    return (
+      <div className="rounded-[1.4rem] border border-[#d9e5ec] bg-[#f7fbfd] p-4 sm:col-span-2">
+        <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+          ข้อมูลประเมินการเยี่ยม
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <input
+            value={value.temperatureCelsius ?? ""}
+            onChange={(event) => setField("temperatureCelsius", event.target.value)}
+            placeholder="อุณหภูมิ (°C)"
+            inputMode="decimal"
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            value={value.pulsePerMinute ?? ""}
+            onChange={(event) => setField("pulsePerMinute", event.target.value)}
+            placeholder="ชีพจร ครั้ง/นาที"
+            inputMode="numeric"
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            value={value.respiratoryRatePerMinute ?? ""}
+            onChange={(event) =>
+              setField("respiratoryRatePerMinute", event.target.value)
+            }
+            placeholder="อัตราหายใจ ครั้ง/นาที"
+            inputMode="numeric"
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            value={value.bloodPressureMmHg ?? ""}
+            onChange={(event) => setField("bloodPressureMmHg", event.target.value)}
+            placeholder="ความดันโลหิต mmHg"
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+          />
+          <select
+            value={value.ppsScore ?? ""}
+            onChange={(event) =>
+              setField(
+                "ppsScore",
+                event.target.value ? Number(event.target.value) : undefined,
+              )
+            }
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+          >
+            <option value="">PPS score 0-100</option>
+            {ppsScoreOptions.map((score) => (
+              <option key={score} value={score}>
+                {score}
+              </option>
+            ))}
+          </select>
+          <select
+            value={value.painScore ?? ""}
+            onChange={(event) =>
+              setField(
+                "painScore",
+                event.target.value ? Number(event.target.value) : undefined,
+              )
+            }
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+          >
+            <option value="">ระดับปวด 0-10</option>
+            {painScoreOptions.map((score) => (
+              <option key={score} value={score}>
+                {score}
+              </option>
+            ))}
+          </select>
+          <input
+            value={value.painLocation ?? ""}
+            onChange={(event) => setField("painLocation", event.target.value)}
+            placeholder="ตำแหน่งที่ปวด (ถ้ามี)"
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none xl:col-span-2"
+          />
+          <textarea
+            value={value.esasChiefComplaint ?? ""}
+            onChange={(event) => setField("esasChiefComplaint", event.target.value)}
+            placeholder="อาการสำคัญ (CC) / ESAS"
+            rows={2}
+            className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none sm:col-span-2 xl:col-span-4"
+          />
+        </div>
+
+        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <div className="rounded-2xl bg-white p-3">
+            <div className="text-sm font-semibold text-[#123047]">อาการรบกวนอื่นๆ</div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {distressingSymptomOptions.map((option) => (
+                <label key={option} className="flex items-center gap-2 text-xs text-[#123047]">
+                  <input
+                    type="checkbox"
+                    checked={value.distressingSymptoms.includes(option)}
+                    onChange={(event) =>
+                      toggleField("distressingSymptoms", option, event.target.checked)
+                    }
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-4">
+            <div className="rounded-2xl bg-white p-3">
+              <div className="text-sm font-semibold text-[#123047]">การใช้ออกซิเจน</div>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {oxygenUseOptions.map((option) => (
+                  <label key={option} className="flex items-center gap-2 text-xs text-[#123047]">
+                    <input
+                      type="radio"
+                      name={`oxygen-${editingVisitId ?? "new"}`}
+                      checked={value.oxygenUse === option}
+                      onChange={() => setField("oxygenUse", option)}
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+              {value.oxygenUse === "อื่นๆ" ? (
+                <input
+                  value={value.oxygenUseOther ?? ""}
+                  onChange={(event) => setField("oxygenUseOther", event.target.value)}
+                  placeholder="ระบุการใช้ออกซิเจน"
+                  className="mt-3 w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                />
+              ) : null}
+            </div>
+            <div className="rounded-2xl bg-white p-3">
+              <div className="text-sm font-semibold text-[#123047]">การจัดการความปวด</div>
+              <div className="mt-3 grid gap-2">
+                {painManagementOptions.map((option) => (
+                  <label key={option} className="flex items-center gap-2 text-xs text-[#123047]">
+                    <input
+                      type="checkbox"
+                      checked={value.painManagement.includes(option)}
+                      onChange={(event) =>
+                        toggleField("painManagement", option, event.target.checked)
+                      }
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+              {value.painManagement.includes("อื่นๆ") ? (
+                <input
+                  value={value.painManagementOther ?? ""}
+                  onChange={(event) =>
+                    setField("painManagementOther", event.target.value)
+                  }
+                  placeholder="ระบุวิธีจัดการความปวดอื่นๆ"
+                  className="mt-3 w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                />
+              ) : null}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white p-3 xl:col-span-2">
+            <div className="text-sm font-semibold text-[#123047]">
+              ผลข้างเคียงจาก Morphine
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {morphineSideEffectOptions.map((option) => (
+                <label key={option} className="flex items-center gap-2 text-xs text-[#123047]">
+                  <input
+                    type="checkbox"
+                    checked={value.morphineSideEffects.includes(option)}
+                    onChange={(event) =>
+                      toggleField("morphineSideEffects", option, event.target.checked)
+                    }
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+            {value.morphineSideEffects.includes("อื่นๆระบุ") ? (
+              <input
+                value={value.morphineSideEffectsOther ?? ""}
+                onChange={(event) =>
+                  setField("morphineSideEffectsOther", event.target.value)
+                }
+                placeholder="ระบุผลข้างเคียงอื่นๆ"
+                className="mt-3 w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+              />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
   };
   const loadCandidates = () => {
     setWorking(true);
@@ -1590,12 +1959,14 @@ export function PalliativeWorkspace({
             visitorName: currentUser.displayName,
             unitId: currentUser.unitId,
             checklist: normalizedChecklist,
+            clinical: visitClinical,
             photos,
           }),
         }),
       "บันทึกการเยี่ยมแล้ว",
       () => {
         setVisitChecklist(defaultVisitChecklistState);
+        setVisitClinical(createDefaultClinicalAssessment());
         setPatientCardFiles([null]);
         setFollowUpFiles([null]);
         setPatientCardFileInputKey((value) => value + 1);
@@ -1634,6 +2005,7 @@ export function PalliativeWorkspace({
       note: visit.note,
     });
     setDailyVisitChecklist(visit.checklist);
+    setDailyVisitClinical(visit.clinical ?? createDefaultClinicalAssessment());
   };
 
   const saveDailyVisitEdit = () => {
@@ -1658,6 +2030,7 @@ export function PalliativeWorkspace({
           body: JSON.stringify({
             ...dailyVisitDraft,
             checklist: dailyVisitChecklist,
+            clinical: dailyVisitClinical,
             actorUserId: currentUser.id,
           }),
         }),
@@ -2186,6 +2559,10 @@ export function PalliativeWorkspace({
                             </label>
                           ))}
                         </div>
+                        {renderClinicalAssessmentForm(
+                          dailyVisitClinical,
+                          setDailyVisitClinical,
+                        )}
                         <button
                           type="button"
                           onClick={saveDailyVisitEdit}
@@ -2207,6 +2584,9 @@ export function PalliativeWorkspace({
                         <div className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]">
                           <div className="text-xs text-[#6f8190]">หมายเหตุ</div>
                           {visit.note || "-"}
+                        </div>
+                        <div className="md:col-span-3">
+                          <VisitClinicalSummary clinical={visit.clinical} />
                         </div>
                       </div>
                     )}
@@ -4138,6 +4518,7 @@ export function PalliativeWorkspace({
                         placeholder="บันทึกการเยี่ยม"
                         className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none sm:col-span-2"
                       />
+                      {renderClinicalAssessmentForm(visitClinical, setVisitClinical)}
                       <div className="rounded-2xl border border-dashed border-[#c9d9e3] bg-white px-4 py-3 text-sm sm:col-span-2">
                         <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
                           {getPhotoCategoryLabel("patient-card")}
@@ -4148,19 +4529,39 @@ export function PalliativeWorkspace({
                               <div className="mb-1 text-xs text-[#5f7486]">
                                 รูปที่ {index + 1}
                               </div>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                onChange={(event) =>
-                                  setPatientCardFiles((prev) =>
-                                    prev.map((item, itemIndex) =>
-                                      itemIndex === index ? event.target.files : item,
-                                    ),
-                                  )
-                                }
-                                className="w-full text-sm outline-none"
-                              />
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                <label className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-xs text-[#123047]">
+                                  เลือกรูปจากเครื่อง
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(event) =>
+                                      setPatientCardFiles((prev) =>
+                                        prev.map((item, itemIndex) =>
+                                          itemIndex === index ? event.target.files : item,
+                                        ),
+                                      )
+                                    }
+                                    className="mt-2 w-full text-sm outline-none"
+                                  />
+                                </label>
+                                <label className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-xs text-[#123047]">
+                                  ถ่ายรูปใหม่
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    onChange={(event) =>
+                                      setPatientCardFiles((prev) =>
+                                        prev.map((item, itemIndex) =>
+                                          itemIndex === index ? event.target.files : item,
+                                        ),
+                                      )
+                                    }
+                                    className="mt-2 w-full text-sm outline-none"
+                                  />
+                                </label>
+                              </div>
                               <div className="mt-1 text-xs text-[#6f8190]">
                                 {files?.length ? "เลือกรูปแล้ว" : "ยังไม่ได้เลือกรูป"}
                               </div>
@@ -4187,19 +4588,39 @@ export function PalliativeWorkspace({
                               <div className="mb-1 text-xs text-[#5f7486]">
                                 รูปที่ {index + 1}
                               </div>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                onChange={(event) =>
-                                  setFollowUpFiles((prev) =>
-                                    prev.map((item, itemIndex) =>
-                                      itemIndex === index ? event.target.files : item,
-                                    ),
-                                  )
-                                }
-                                className="w-full text-sm outline-none"
-                              />
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                <label className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-xs text-[#123047]">
+                                  เลือกรูปจากเครื่อง
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(event) =>
+                                      setFollowUpFiles((prev) =>
+                                        prev.map((item, itemIndex) =>
+                                          itemIndex === index ? event.target.files : item,
+                                        ),
+                                      )
+                                    }
+                                    className="mt-2 w-full text-sm outline-none"
+                                  />
+                                </label>
+                                <label className="rounded-xl border border-[#d9e5ec] px-3 py-2 text-xs text-[#123047]">
+                                  ถ่ายรูปใหม่
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    onChange={(event) =>
+                                      setFollowUpFiles((prev) =>
+                                        prev.map((item, itemIndex) =>
+                                          itemIndex === index ? event.target.files : item,
+                                        ),
+                                      )
+                                    }
+                                    className="mt-2 w-full text-sm outline-none"
+                                  />
+                                </label>
+                              </div>
                               <div className="mt-1 text-xs text-[#6f8190]">
                                 {files?.length ? "เลือกรูปแล้ว" : "ยังไม่ได้เลือกรูป"}
                               </div>
@@ -4277,6 +4698,7 @@ export function PalliativeWorkspace({
                             <div className="mt-2 text-sm leading-7 text-[#5f7486]">
                               {visit.note}
                             </div>
+                            <VisitClinicalSummary clinical={visit.clinical} />
                             <div className="mt-3 flex flex-wrap gap-2">
                               {Object.entries(visit.checklist)
                                 .filter(([, active]) => active)

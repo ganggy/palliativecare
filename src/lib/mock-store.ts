@@ -25,6 +25,7 @@ import type {
   StmRow,
   UnitSummary,
   UserRole,
+  VisitClinicalAssessment,
   VisitChecklist,
   VisitPhoto,
 } from "./types";
@@ -1183,6 +1184,7 @@ export function addVisitRecord(
     visitorName: string;
     unitId: string;
     checklist: VisitChecklist;
+    clinical?: VisitClinicalAssessment;
     photos: Array<{ url: string; fileName: string; caption?: string }>;
   },
 ) {
@@ -1223,6 +1225,7 @@ export function addVisitRecord(
     symptoms: input.symptoms.trim(),
     note: input.note.trim(),
     checklist: normalizedChecklist,
+    clinical: input.clinical,
     photos: buildStoredPhotos(patientId, visitId, input.photos),
     createdAt: nowIso(),
   };
@@ -1256,6 +1259,7 @@ export function updateVisitRecord(
     symptoms: string;
     note: string;
     checklist: VisitChecklist;
+    clinical?: VisitClinicalAssessment;
   },
 ) {
   const actor = users.find((item) => item.id === input.actorUserId);
@@ -1282,6 +1286,7 @@ export function updateVisitRecord(
     hasPhoto: visit.photos.length > 0,
     hasSymptoms: Boolean(input.symptoms.trim()),
   });
+  visit.clinical = input.clinical;
 
   const patient = patients.find((item) => item.id === visit.patientId);
   if (patient) refreshPatientMetrics(patient);

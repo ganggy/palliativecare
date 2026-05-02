@@ -108,6 +108,24 @@ export interface VisitChecklist {
   photoCaptured: boolean;
 }
 
+export interface VisitClinicalAssessment {
+  temperatureCelsius?: string;
+  pulsePerMinute?: string;
+  respiratoryRatePerMinute?: string;
+  bloodPressureMmHg?: string;
+  ppsScore?: number;
+  esasChiefComplaint?: string;
+  distressingSymptoms: string[];
+  oxygenUse?: string;
+  oxygenUseOther?: string;
+  painLocation?: string;
+  painScore?: number;
+  painManagement: string[];
+  painManagementOther?: string;
+  morphineSideEffects: string[];
+  morphineSideEffectsOther?: string;
+}
+
 export interface VisitPhoto {
   id: string;
   visitId: number;
@@ -131,6 +149,7 @@ export interface PalliativeVisit {
   symptoms: string;
   note: string;
   checklist: VisitChecklist;
+  clinical?: VisitClinicalAssessment;
   photos: VisitPhoto[];
   createdAt: string;
 }

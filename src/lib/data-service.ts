@@ -63,6 +63,7 @@ import type {
   UnitSummary,
   UserApprovalStatus,
   UserRole,
+  VisitClinicalAssessment,
   VisitChecklist,
 } from "./types";
 
@@ -156,6 +157,7 @@ interface DbVisitRow {
   symptoms: string;
   note: string;
   checklistJson: string;
+  clinicalJson?: string | null;
   photosJson: string;
   createdAt: string;
 }
@@ -442,6 +444,25 @@ async function ensureHosSyncCacheSchema() {
   `);
 }
 
+async function ensureVisitClinicalSchema() {
+  if (!isDbConfigured("palliative")) return;
+  const pool = getPool("palliative");
+  const [columnsRaw] = await pool.query(`
+    SELECT COLUMN_NAME
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'palliative_visits'
+  `);
+  const columns = new Set(
+    (columnsRaw as Array<{ COLUMN_NAME: string }>).map((row) => row.COLUMN_NAME),
+  );
+  if (!columns.has("clinical_json")) {
+    await pool.query(
+      `ALTER TABLE palliative_visits ADD COLUMN clinical_json JSON NULL AFTER checklist_json`,
+    );
+  }
+}
+
 function buildSnapshotFromCollections(
   users: AppUser[],
   units: ServiceUnit[],
@@ -578,6 +599,7 @@ function buildSnapshotFromCollections(
 
 async function loadDbSnapshot(): Promise<AppSnapshot> {
   await ensureAuthSchema();
+  await ensureVisitClinicalSchema();
   const pool = getPool("palliative");
   const [unitRows] = await pool.query(
     `SELECT id, code, short_name AS shortName, name, kind, color, description FROM palliative_units ORDER BY sort_order ASC, name ASC`,
@@ -645,6 +667,7 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
       symptoms,
       note,
       checklist_json AS checklistJson,
+      clinical_json AS clinicalJson,
       photos_json AS photosJson,
       created_at AS createdAt
     FROM palliative_visits
@@ -718,6 +741,10 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
     checklist: parseJson<VisitChecklist>(
       row.checklistJson,
       defaultVisitChecklist(),
+    ),
+    clinical: parseJson<VisitClinicalAssessment | undefined>(
+      row.clinicalJson,
+      undefined,
     ),
     photos: parseJson(row.photosJson, []),
   }));
@@ -2312,6 +2339,7 @@ export async function saveVisit(
     visitorName: string;
     unitId: string;
     checklist: VisitChecklist;
+    clinical?: VisitClinicalAssessment;
     photos: Array<{ url: string; fileName: string; caption?: string }>;
   },
 ) {
@@ -2327,6 +2355,7 @@ export async function saveVisit(
   });
 
   const pool = getPool("palliative");
+  await ensureVisitClinicalSchema();
   const [rows] = await pool.query(
     `
       SELECT
@@ -2383,9 +2412,9 @@ export async function saveVisit(
     `
       INSERT INTO palliative_visits (
         patient_id, unit_id, visit_date, scheduled_date, rescheduled_from, status,
-        visitor_user_id, visitor_name, authen_code, symptoms, note, checklist_json, photos_json
+        visitor_user_id, visitor_name, authen_code, symptoms, note, checklist_json, clinical_json, photos_json
       )
-      VALUES (?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       patientId,
@@ -2401,6 +2430,7 @@ export async function saveVisit(
       symptoms,
       note,
       JSON.stringify(normalizedChecklist),
+      JSON.stringify(input.clinical ?? null),
       JSON.stringify(input.photos),
     ],
   );
@@ -2438,6 +2468,7 @@ export async function updateVisit(
     symptoms: string;
     note: string;
     checklist: VisitChecklist;
+    clinical?: VisitClinicalAssessment;
   },
 ) {
   if (!isDbConfigured("palliative")) {
@@ -2466,6 +2497,7 @@ export async function updateVisit(
     hasSymptoms: Boolean(input.symptoms.trim()),
   });
   const pool = getPool("palliative");
+  await ensureVisitClinicalSchema();
   await pool.query(
     `
       UPDATE palliative_visits
@@ -2473,7 +2505,8 @@ export async function updateVisit(
           authen_code = ?,
           symptoms = ?,
           note = ?,
-          checklist_json = ?
+          checklist_json = ?,
+          clinical_json = ?
       WHERE id = ?
     `,
     [
@@ -2482,6 +2515,7 @@ export async function updateVisit(
       input.symptoms.trim(),
       input.note.trim(),
       JSON.stringify(normalizedChecklist),
+      JSON.stringify(input.clinical ?? null),
       visitId,
     ],
   );

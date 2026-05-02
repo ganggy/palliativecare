@@ -16,6 +16,7 @@ export async function PATCH(
     symptoms: body.symptoms,
     note: body.note,
     checklist: body.checklist,
+    clinical: body.clinical,
   });
   return NextResponse.json({ ok: true });
 }
