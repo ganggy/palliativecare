@@ -4,8 +4,10 @@ import {
   startTransition,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
+  type PointerEvent,
   type SetStateAction,
 } from "react";
 import Image from "next/image";
@@ -13,6 +15,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LoadingProgressOverlay } from "@/components/loading-progress-overlay";
 import type {
+  AdvanceCarePlanForm,
   AppSnapshot,
   AuthSessionUser,
   CandidateFilterMode,
@@ -103,6 +106,30 @@ const morphineSideEffectOptions = [
   "อื่นๆระบุ",
 ];
 
+const acpImportantValueOptions = [
+  "ต้องการมีคุณภาพชีวิตที่ดี",
+  "ต้องการการรักษาที่ไม่สร้างความเจ็บปวดหรือทุกข์ทรมาน",
+  "ต้องการมีชีวิตอยู่ให้นานที่สุดเท่าที่จะทำได้",
+  "อื่นๆ",
+];
+
+const acpUnacceptableStateOptions = [
+  "ช่วยเหลือตัวเองไม่ได้ ติดเตียง ต้องมีผู้ดูแลตลอด",
+  "ไม่มีการรับรู้/จำคนที่รักไม่ได้/สภาพผักถาวร",
+  "ต้องใช้เครื่องช่วยหายใจไปตลอดชีวิต",
+  "อื่นๆ",
+];
+
+const acpTreatmentScopeOptions = [
+  "รักษาเต็มที่แม้จะมีเครื่องมือพยุงชีพ",
+  "รักษาเต็มที่รวมถึงเครื่องพยุงชีพ แต่หากไม่ได้ผลอนุญาตให้ถอดและรักษาตามอาการ",
+  "รักษาเพื่อลดทรมาน ไม่ใช้เครื่องพยุงชีพหรือการยื้อชีวิต",
+  "ยังตัดสินใจไม่ได้",
+  "อื่นๆ",
+];
+
+const acpPreferredPlaceOptions = ["บ้าน", "โรงพยาบาล", "ที่อื่นๆ"];
+
 type ImportSource = "REP" | "STM";
 
 type ImportFileOption = {
@@ -113,7 +140,7 @@ type ImportFileOption = {
   modifiedAt: string;
 };
 
-type NurseWorkspaceTab = "search" | "registry" | "visit" | "progress";
+type NurseWorkspaceTab = "search" | "registry" | "visit" | "acp" | "progress";
 type UserManagementTab = "members" | "approvals";
 
 type VisitPhotoCategory = "patient-card" | "follow-up";
@@ -278,6 +305,50 @@ function createDefaultClinicalAssessment(): VisitClinicalAssessment {
   };
 }
 
+function createAcpDraft(
+  patient?: PalliativePatient,
+  currentDate = "",
+): AdvanceCarePlanForm {
+  return {
+    planDate: currentDate,
+    patientName: patient?.fullName ?? "",
+    patientAge: patient?.age ? String(patient.age) : "",
+    patientCid: patient?.cid ?? "",
+    patientAddress: patient?.address ?? "",
+    patientPhone: patient?.phone ?? "",
+    patientBirthDate: "",
+    regularHospital: patient?.assignedUnitName ?? "",
+    insurance: patient?.insuranceGroup ?? "",
+    coPlannerName: "",
+    coPlannerCid: "",
+    coPlannerRelation: "",
+    coPlannerPhone: "",
+    importantValues: [],
+    importantValuesOther: "",
+    unacceptableStates: [],
+    unacceptableStatesOther: "",
+    treatmentScope: "",
+    treatmentScopeOther: "",
+    otherCare: "",
+    terminalNaturalDeath: "",
+    preferredPlace: "",
+    preferredPlaceOther: "",
+    terminalOtherCare: "",
+    proxyName: "",
+    proxyAge: "",
+    proxyRelation: "",
+    proxyAddress: "",
+    proxyPhone: "",
+    healthStaffName: "",
+    healthStaffProfession: "",
+    healthStaffPhone: "",
+    patientSignerName: patient?.fullName ?? "",
+    proxySignerName: "",
+    witness1Name: "",
+    witness2Name: "",
+  };
+}
+
 function toggleListValue(values: string[], value: string, checked: boolean) {
   if (checked) return values.includes(value) ? values : [...values, value];
   return values.filter((item) => item !== value);
@@ -349,6 +420,215 @@ function VisitClinicalSummary({
       </div>
     </div>
   );
+}
+
+function SignaturePad({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+
+  const getPoint = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
+
+  const saveCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    onChange(canvas.toDataURL("image/png"));
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    onChange("");
+  };
+
+  return (
+    <div className="rounded-2xl border border-[#d9e5ec] bg-white p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-[#123047]">{label}</div>
+        <button
+          type="button"
+          onClick={clearCanvas}
+          className="rounded-full border border-[#d9e5ec] px-3 py-1 text-xs text-[#5f7486]"
+        >
+          ล้างลายเซ็น
+        </button>
+      </div>
+      <canvas
+        ref={canvasRef}
+        width={520}
+        height={180}
+        className="h-36 w-full touch-none rounded-xl border border-dashed border-[#b9ccd8] bg-[#fbfdff]"
+        onPointerDown={(event) => {
+          const canvas = canvasRef.current;
+          const context = canvas?.getContext("2d");
+          if (!canvas || !context) return;
+          const point = getPoint(event);
+          drawingRef.current = true;
+          canvas.setPointerCapture(event.pointerId);
+          context.lineWidth = 3;
+          context.lineCap = "round";
+          context.strokeStyle = "#123047";
+          context.beginPath();
+          context.moveTo(point.x, point.y);
+        }}
+        onPointerMove={(event) => {
+          if (!drawingRef.current) return;
+          const context = canvasRef.current?.getContext("2d");
+          if (!context) return;
+          const point = getPoint(event);
+          context.lineTo(point.x, point.y);
+          context.stroke();
+        }}
+        onPointerUp={(event) => {
+          drawingRef.current = false;
+          canvasRef.current?.releasePointerCapture(event.pointerId);
+          saveCanvas();
+        }}
+        onPointerLeave={() => {
+          if (drawingRef.current) saveCanvas();
+          drawingRef.current = false;
+        }}
+      />
+      <div className="mt-2 text-xs text-[#6f8190]">
+        {value ? "ลงลายเซ็นแล้ว" : "ให้เซ็นในกรอบนี้ด้วยนิ้วหรือปากกา stylus"}
+      </div>
+    </div>
+  );
+}
+
+function escapeHtml(value?: string) {
+  return (value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+async function makeAcpSnapshotJpeg(input: {
+  form: AdvanceCarePlanForm;
+  patient?: PalliativePatient;
+  visit?: PalliativeVisit;
+  signatures: Record<string, string>;
+}) {
+  const { form, patient, visit, signatures } = input;
+  const list = (items: string[], other?: string) =>
+    [...items, other?.trim()].filter(Boolean).map(escapeHtml).join(", ") || "-";
+  const signatureBox = (label: string, name?: string, dataUrl?: string) => `
+    <div class="sig">
+      <div class="sig-label">${escapeHtml(label)}</div>
+      ${
+        dataUrl
+          ? `<img src="${dataUrl}" />`
+          : `<div class="sig-empty">ยังไม่มีลายเซ็น</div>`
+      }
+      <div class="sig-name">(${escapeHtml(name || "-")})</div>
+    </div>
+  `;
+  const html = `
+    <div xmlns="http://www.w3.org/1999/xhtml" class="page">
+      <style>
+        .page{box-sizing:border-box;width:900px;min-height:1280px;padding:42px;font-family:"Noto Sans Thai","Tahoma",sans-serif;color:#123047;background:#fff}
+        .header{padding:24px;border-radius:28px;background:linear-gradient(135deg,#0f4f4b,#d8efe8);color:white}
+        .eyebrow{font-size:14px;letter-spacing:.18em;text-transform:uppercase;opacity:.8}
+        h1{margin:8px 0 4px;font-size:34px;line-height:1.18}
+        .sub{font-size:17px;opacity:.9}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .section{margin-top:18px;padding:18px;border:1px solid #d9e5ec;border-radius:22px;background:#f8fcfe}
+        .title{font-size:20px;font-weight:700;margin-bottom:10px;color:#0f4f4b}
+        .field{padding:10px 12px;border-radius:14px;background:white;font-size:15px;line-height:1.55}
+        .label{font-size:12px;color:#6f8190}
+        .value{margin-top:2px;font-weight:600;color:#123047}
+        .wide{grid-column:1/-1}
+        .consent{font-size:14px;line-height:1.7;background:#fff;border-radius:16px;padding:12px;color:#334b5f}
+        .sigs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+        .sig{background:white;border:1px dashed #b9ccd8;border-radius:16px;padding:10px;text-align:center}
+        .sig-label{font-size:13px;color:#6f8190}
+        .sig img{height:82px;max-width:100%;object-fit:contain}
+        .sig-empty{height:82px;display:flex;align-items:center;justify-content:center;color:#9aaaba;font-size:13px}
+        .sig-name{font-size:14px;color:#123047}
+      </style>
+      <div class="header">
+        <div class="eyebrow">Advance Care Plan / Living Will</div>
+        <h1>การวางแผนการดูแลล่วงหน้า</h1>
+        <div class="sub">ทำที่โรงพยาบาลโคกศรีสุพรรณ วันที่ ${escapeHtml(formatDate(form.planDate))}</div>
+      </div>
+      <div class="section">
+        <div class="title">ส่วนที่ 1 ข้อมูลผู้แสดงเจตนา</div>
+        <div class="grid">
+          <div class="field"><div class="label">ชื่อ-สกุล</div><div class="value">${escapeHtml(form.patientName || patient?.fullName)}</div></div>
+          <div class="field"><div class="label">HN / Visit</div><div class="value">${escapeHtml(patient?.hn)} / ${escapeHtml(visit ? formatDate(visit.visitDate) : "-")}</div></div>
+          <div class="field"><div class="label">อายุ</div><div class="value">${escapeHtml(form.patientAge)}</div></div>
+          <div class="field"><div class="label">เลขบัตรประชาชน</div><div class="value">${escapeHtml(form.patientCid || patient?.cid)}</div></div>
+          <div class="field wide"><div class="label">ที่อยู่</div><div class="value">${escapeHtml(form.patientAddress)}</div></div>
+          <div class="field"><div class="label">โทรศัพท์</div><div class="value">${escapeHtml(form.patientPhone)}</div></div>
+          <div class="field"><div class="label">สิทธิรักษา</div><div class="value">${escapeHtml(form.insurance)}</div></div>
+          <div class="field"><div class="label">ผู้ร่วมวางแผน</div><div class="value">${escapeHtml(form.coPlannerName)}</div></div>
+          <div class="field"><div class="label">ความสัมพันธ์/โทรศัพท์</div><div class="value">${escapeHtml(form.coPlannerRelation)} ${escapeHtml(form.coPlannerPhone)}</div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="title">ส่วนที่ 2 ความต้องการและขอบเขตการรักษา</div>
+        <div class="grid">
+          <div class="field wide"><div class="label">สิ่งที่ให้ความสำคัญ</div><div class="value">${list(form.importantValues, form.importantValuesOther)}</div></div>
+          <div class="field wide"><div class="label">สภาวะที่ไม่ต้องการ/ยอมรับไม่ได้</div><div class="value">${list(form.unacceptableStates, form.unacceptableStatesOther)}</div></div>
+          <div class="field wide"><div class="label">ขอบเขตการรักษาที่ต้องการ</div><div class="value">${escapeHtml(form.treatmentScope)} ${escapeHtml(form.treatmentScopeOther)}</div></div>
+          <div class="field wide"><div class="label">การดูแลอื่นๆ</div><div class="value">${escapeHtml(form.otherCare)}</div></div>
+          <div class="field"><div class="label">การตายสงบตามธรรมชาติ</div><div class="value">${escapeHtml(form.terminalNaturalDeath)}</div></div>
+          <div class="field"><div class="label">ปรารถนาเสียชีวิตที่</div><div class="value">${escapeHtml(form.preferredPlace)} ${escapeHtml(form.preferredPlaceOther)}</div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="title">ส่วนที่ 3 ผู้ตัดสินใจแทนและการยินยอมข้อมูล</div>
+        <div class="grid">
+          <div class="field"><div class="label">ผู้ตัดสินใจแทน</div><div class="value">${escapeHtml(form.proxyName)}</div></div>
+          <div class="field"><div class="label">ความสัมพันธ์/โทรศัพท์</div><div class="value">${escapeHtml(form.proxyRelation)} ${escapeHtml(form.proxyPhone)}</div></div>
+          <div class="field wide"><div class="label">ที่อยู่ผู้ตัดสินใจแทน</div><div class="value">${escapeHtml(form.proxyAddress)}</div></div>
+          <div class="consent wide">ผู้แสดงเจตนายินยอมให้ผู้ประกอบวิชาชีพด้านสุขภาพเข้าถึงและเปิดเผยข้อมูลสุขภาพผ่านระบบอิเล็กทรอนิกส์ เพื่อประโยชน์ในการรักษาพยาบาลและการส่งต่อข้อมูลที่ต่อเนื่อง โดยสถานพยาบาลจะคุ้มครองข้อมูลส่วนบุคคลตามมาตรฐานที่เกี่ยวข้อง</div>
+        </div>
+        <div class="sigs">
+          ${signatureBox("ผู้แสดงเจตนา", form.patientSignerName, signatures.patient)}
+          ${signatureBox("ผู้ตัดสินใจแทน", form.proxySignerName, signatures.proxy)}
+          ${signatureBox("พยาน 1", form.witness1Name, signatures.witness1)}
+          ${signatureBox("พยาน 2", form.witness2Name, signatures.witness2)}
+          ${signatureBox("บุคลากรด้านสุขภาพ", form.healthStaffName, signatures.staff)}
+        </div>
+      </div>
+    </div>
+  `;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1280"><foreignObject width="100%" height="100%">${html}</foreignObject></svg>`;
+  const image = new window.Image();
+  const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("สร้างภาพเอกสาร ACP/LW ไม่สำเร็จ"));
+    image.src = dataUrl;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = 900;
+  canvas.height = 1280;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("ไม่สามารถสร้าง PDF preview ได้");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0);
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 function candidateModeLabel(mode: CandidateFilterMode) {
@@ -607,6 +887,15 @@ export function PalliativeWorkspace({
   const [visitClinical, setVisitClinical] = useState<VisitClinicalAssessment>(
     createDefaultClinicalAssessment,
   );
+  const [acpSelectedVisitId, setAcpSelectedVisitId] = useState<number>(0);
+  const [acpDraft, setAcpDraft] = useState<AdvanceCarePlanForm>(() =>
+    createAcpDraft(initialPatient, initialSnapshot.currentDate),
+  );
+  const [acpPatientSignature, setAcpPatientSignature] = useState("");
+  const [acpProxySignature, setAcpProxySignature] = useState("");
+  const [acpWitness1Signature, setAcpWitness1Signature] = useState("");
+  const [acpWitness2Signature, setAcpWitness2Signature] = useState("");
+  const [acpStaffSignature, setAcpStaffSignature] = useState("");
   const [selectedPatientVisitHistory, setSelectedPatientVisitHistory] = useState<
     CandidateVisitHistory[]
   >([]);
@@ -785,6 +1074,9 @@ export function PalliativeWorkspace({
   const selectedVisits = snapshot.visits.filter(
     (visit) => visit.patientId === selectedPatient?.id,
   );
+  const selectedAcpVisit =
+    selectedVisits.find((visit) => visit.id === acpSelectedVisitId) ??
+    selectedVisits[0];
   const selectedComments = snapshot.comments.filter(
     (comment) => comment.patientId === selectedPatient?.id,
   );
@@ -1580,6 +1872,13 @@ export function PalliativeWorkspace({
     });
     setVisitChecklist(defaultVisitChecklistState);
     setVisitClinical(createDefaultClinicalAssessment());
+    setAcpDraft(createAcpDraft(patient, sourceSnapshot.currentDate));
+    setAcpSelectedVisitId(0);
+    setAcpPatientSignature("");
+    setAcpProxySignature("");
+    setAcpWitness1Signature("");
+    setAcpWitness2Signature("");
+    setAcpStaffSignature("");
     setPatientCardFiles([null]);
     setFollowUpFiles([null]);
     setPatientCardFileInputKey((value) => value + 1);
@@ -2037,6 +2336,63 @@ export function PalliativeWorkspace({
       "แก้ไขข้อมูลที่ส่งแล้ว",
       () => setEditingVisitId(null),
     );
+  };
+
+  const setAcpField = <K extends keyof AdvanceCarePlanForm>(
+    key: K,
+    value: AdvanceCarePlanForm[K],
+  ) => setAcpDraft((draft) => ({ ...draft, [key]: value }));
+
+  const toggleAcpList = (
+    key: "importantValues" | "unacceptableStates",
+    option: string,
+    checked: boolean,
+  ) =>
+    setAcpDraft((draft) => ({
+      ...draft,
+      [key]: toggleListValue(draft[key] ?? [], option, checked),
+    }));
+
+  const saveAcpDocument = async () => {
+    if (!currentUser || !selectedPatient || !selectedAcpVisit) {
+      setNotice("กรุณาเลือกคนไข้และ visit ก่อนบันทึก ACP/LW");
+      return;
+    }
+    if (!acpPatientSignature || !acpWitness1Signature) {
+      setNotice("กรุณาให้ผู้ป่วยและพยานอย่างน้อย 1 คนเซ็นรับทราบ");
+      return;
+    }
+    setWorking(true);
+    setNotice(null);
+    try {
+      const snapshotJpegDataUrl = await makeAcpSnapshotJpeg({
+        form: acpDraft,
+        patient: selectedPatient,
+        visit: selectedAcpVisit,
+        signatures: {
+          patient: acpPatientSignature,
+          proxy: acpProxySignature,
+          witness1: acpWitness1Signature,
+          witness2: acpWitness2Signature,
+          staff: acpStaffSignature,
+        },
+      });
+      await requestJson(`/api/visits/${selectedAcpVisit.id}/acp`, {
+        method: "POST",
+        body: JSON.stringify({
+          actorUserId: currentUser.id,
+          patientId: selectedPatient.id,
+          form: acpDraft,
+          snapshotJpegDataUrl,
+        }),
+      });
+      await refresh();
+      setNotice("บันทึก ACP/LW เป็น PDF แล้ว");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "บันทึก ACP/LW ไม่สำเร็จ");
+    } finally {
+      setWorking(false);
+    }
   };
 
   const loadImportFiles = () => {
@@ -3084,6 +3440,7 @@ export function PalliativeWorkspace({
                   ["search", "ค้นหา/ยืนยัน"],
                   ["registry", "ทะเบียน"],
                   ["visit", "เยี่ยมบ้าน"],
+                  ["acp", "ACP/LW"],
                   ["progress", "ภาพรวม"],
                 ] as Array<[NurseWorkspaceTab, string]>
               ).map(([tab, label]) => (
@@ -4207,6 +4564,247 @@ export function PalliativeWorkspace({
         </section>
       ) : null}
 
+      {isUnitNurse && nurseTab === "acp" ? (
+        <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+          <Box
+            title="แบบฟอร์ม ACP/Living Will"
+            note="เลือก visit ที่ต้องการ ให้ผู้ป่วยและพยานเซ็นในระบบ แล้วจัดเก็บเป็น PDF แนบกับ visit"
+          >
+            {selectedPatient ? (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <select
+                    value={selectedAcpVisit?.id ?? ""}
+                    onChange={(event) => setAcpSelectedVisitId(Number(event.target.value))}
+                    className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm text-[#123047] outline-none"
+                  >
+                    {selectedVisits.length ? (
+                      selectedVisits.map((visit) => (
+                        <option key={visit.id} value={visit.id}>
+                          เยี่ยมวันที่ {formatDate(visit.visitDate)} · {visit.visitorName}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">ยังไม่มี visit ที่บันทึกแล้ว</option>
+                    )}
+                  </select>
+                  <input
+                    type="date"
+                    value={acpDraft.planDate}
+                    onChange={(event) => setAcpField("planDate", event.target.value)}
+                    className="rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                  />
+                </div>
+
+                <div className="rounded-[1.4rem] border border-[#d9e5ec] bg-[#f7fbfd] p-4">
+                  <div className="text-sm font-semibold text-[#123047]">ส่วนที่ 1 ข้อมูลส่วนบุคคล</div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {([
+                      ["patientName", "ชื่อ-สกุลผู้แสดงเจตนา"],
+                      ["patientAge", "อายุ"],
+                      ["patientCid", "เลขบัตรประชาชน"],
+                      ["patientPhone", "เบอร์โทรศัพท์"],
+                      ["patientBirthDate", "วันเดือนปีเกิด"],
+                      ["regularHospital", "สถานพยาบาลประจำ"],
+                      ["insurance", "สิทธิการรักษา"],
+                      ["coPlannerName", "ชื่อผู้ร่วมวางแผน"],
+                      ["coPlannerCid", "เลขบัตรผู้ร่วมวางแผน"],
+                      ["coPlannerRelation", "ความสัมพันธ์"],
+                      ["coPlannerPhone", "เบอร์โทรผู้ร่วมวางแผน"],
+                    ] as Array<[keyof AdvanceCarePlanForm, string]>).map(([key, label]) => (
+                      <input
+                        key={key}
+                        value={(acpDraft[key] as string | undefined) ?? ""}
+                        onChange={(event) => setAcpField(key, event.target.value as never)}
+                        placeholder={label}
+                        className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+                      />
+                    ))}
+                    <textarea
+                      value={acpDraft.patientAddress ?? ""}
+                      onChange={(event) => setAcpField("patientAddress", event.target.value)}
+                      placeholder="ที่อยู่ที่ติดต่อได้"
+                      rows={2}
+                      className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none sm:col-span-2"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[1.4rem] border border-[#d9e5ec] bg-[#f7fbfd] p-4">
+                  <div className="text-sm font-semibold text-[#123047]">ส่วนที่ 2 การแสดงเจตจำนง</div>
+                  <div className="mt-3 grid gap-4">
+                    <div className="rounded-2xl bg-white p-3">
+                      <div className="text-xs font-semibold text-[#6f8190]">สิ่งที่ต้องการ/ให้ความสำคัญ</div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {acpImportantValueOptions.map((option) => (
+                          <label key={option} className="flex items-center gap-2 text-sm text-[#123047]">
+                            <input
+                              type="checkbox"
+                              checked={acpDraft.importantValues.includes(option)}
+                              onChange={(event) => toggleAcpList("importantValues", option, event.target.checked)}
+                            />
+                            {option}
+                          </label>
+                        ))}
+                      </div>
+                      {acpDraft.importantValues.includes("อื่นๆ") ? (
+                        <input
+                          value={acpDraft.importantValuesOther ?? ""}
+                          onChange={(event) => setAcpField("importantValuesOther", event.target.value)}
+                          placeholder="ระบุสิ่งที่ให้ความสำคัญอื่นๆ"
+                          className="mt-3 w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="rounded-2xl bg-white p-3">
+                      <div className="text-xs font-semibold text-[#6f8190]">สภาวะที่ไม่ต้องการ/ยอมรับไม่ได้</div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {acpUnacceptableStateOptions.map((option) => (
+                          <label key={option} className="flex items-center gap-2 text-sm text-[#123047]">
+                            <input
+                              type="checkbox"
+                              checked={acpDraft.unacceptableStates.includes(option)}
+                              onChange={(event) => toggleAcpList("unacceptableStates", option, event.target.checked)}
+                            />
+                            {option}
+                          </label>
+                        ))}
+                      </div>
+                      {acpDraft.unacceptableStates.includes("อื่นๆ") ? (
+                        <input
+                          value={acpDraft.unacceptableStatesOther ?? ""}
+                          onChange={(event) => setAcpField("unacceptableStatesOther", event.target.value)}
+                          placeholder="ระบุสภาวะอื่นๆ"
+                          className="mt-3 w-full rounded-2xl border border-[#d9e5ec] px-4 py-3 text-sm outline-none"
+                        />
+                      ) : null}
+                    </div>
+                    <select
+                      value={acpDraft.treatmentScope ?? ""}
+                      onChange={(event) => setAcpField("treatmentScope", event.target.value)}
+                      className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm text-[#123047] outline-none"
+                    >
+                      <option value="">เลือกขอบเขตการรักษาที่ต้องการ</option>
+                      {acpTreatmentScopeOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    {acpDraft.treatmentScope === "อื่นๆ" ? (
+                      <input
+                        value={acpDraft.treatmentScopeOther ?? ""}
+                        onChange={(event) => setAcpField("treatmentScopeOther", event.target.value)}
+                        placeholder="ระบุขอบเขตการรักษาอื่นๆ"
+                        className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+                      />
+                    ) : null}
+                    <textarea
+                      value={acpDraft.otherCare ?? ""}
+                      onChange={(event) => setAcpField("otherCare", event.target.value)}
+                      placeholder="การดูแลอื่นๆ ที่ต้องการนอกเหนือจากการแพทย์"
+                      rows={2}
+                      className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <select
+                        value={acpDraft.terminalNaturalDeath ?? ""}
+                        onChange={(event) => setAcpField("terminalNaturalDeath", event.target.value)}
+                        className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm text-[#123047] outline-none"
+                      >
+                        <option value="">การตายสงบตามธรรมชาติ</option>
+                        <option value="ต้องการ">ต้องการ</option>
+                        <option value="ไม่ต้องการ">ไม่ต้องการ</option>
+                      </select>
+                      <select
+                        value={acpDraft.preferredPlace ?? ""}
+                        onChange={(event) => setAcpField("preferredPlace", event.target.value)}
+                        className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm text-[#123047] outline-none"
+                      >
+                        <option value="">สถานที่ที่ปรารถนาเสียชีวิต</option>
+                        {acpPreferredPlaceOptions.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {acpDraft.preferredPlace === "ที่อื่นๆ" ? (
+                      <input
+                        value={acpDraft.preferredPlaceOther ?? ""}
+                        onChange={(event) => setAcpField("preferredPlaceOther", event.target.value)}
+                        placeholder="ระบุสถานที่อื่นๆ"
+                        className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-[#f7fbfd] px-4 py-8 text-center text-sm text-[#6f8190]">
+                กรุณาเลือกคนไข้ก่อนเปิดแบบฟอร์ม ACP/LW
+              </div>
+            )}
+          </Box>
+
+          <Box
+            title="ผู้ตัดสินใจแทนและลายเซ็น"
+            note="ลายเซ็นผู้ป่วยและพยาน 1 คนเป็นข้อมูลขั้นต่ำก่อนสร้าง PDF"
+          >
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {([
+                  ["proxyName", "ชื่อผู้ตัดสินใจแทน"],
+                  ["proxyAge", "อายุ"],
+                  ["proxyRelation", "ความสัมพันธ์"],
+                  ["proxyPhone", "เบอร์โทร"],
+                  ["healthStaffName", "ชื่อบุคลากรด้านสุขภาพ"],
+                  ["healthStaffProfession", "วิชาชีพ"],
+                  ["healthStaffPhone", "เบอร์ติดต่อบุคลากร"],
+                  ["patientSignerName", "ชื่อผู้แสดงเจตนา"],
+                  ["proxySignerName", "ชื่อผู้ตัดสินใจแทนที่เซ็น"],
+                  ["witness1Name", "ชื่อพยาน 1"],
+                  ["witness2Name", "ชื่อพยาน 2"],
+                ] as Array<[keyof AdvanceCarePlanForm, string]>).map(([key, label]) => (
+                  <input
+                    key={key}
+                    value={(acpDraft[key] as string | undefined) ?? ""}
+                    onChange={(event) => setAcpField(key, event.target.value as never)}
+                    placeholder={label}
+                    className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none"
+                  />
+                ))}
+                <textarea
+                  value={acpDraft.proxyAddress ?? ""}
+                  onChange={(event) => setAcpField("proxyAddress", event.target.value)}
+                  placeholder="ที่อยู่ผู้ตัดสินใจแทน"
+                  rows={2}
+                  className="rounded-2xl border border-[#d9e5ec] bg-white px-4 py-3 text-sm outline-none sm:col-span-2"
+                />
+              </div>
+              <SignaturePad label="ผู้แสดงเจตนา / คนไข้" value={acpPatientSignature} onChange={setAcpPatientSignature} />
+              <SignaturePad label="ผู้ตัดสินใจแทน" value={acpProxySignature} onChange={setAcpProxySignature} />
+              <SignaturePad label="พยาน 1" value={acpWitness1Signature} onChange={setAcpWitness1Signature} />
+              <SignaturePad label="พยาน 2" value={acpWitness2Signature} onChange={setAcpWitness2Signature} />
+              <SignaturePad label="บุคลากรด้านสุขภาพ" value={acpStaffSignature} onChange={setAcpStaffSignature} />
+              <button
+                type="button"
+                onClick={() => void saveAcpDocument()}
+                disabled={!selectedAcpVisit || working}
+                className="w-full rounded-2xl bg-[#0f766e] px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-[#9db8b4]"
+              >
+                สร้างและบันทึก PDF ACP/LW
+              </button>
+              {selectedAcpVisit?.advanceCarePlan ? (
+                <a
+                  href={selectedAcpVisit.advanceCarePlan.url}
+                  target="_blank"
+                  className="block rounded-2xl border border-[#0f766e33] bg-[#ebfaf6] px-4 py-3 text-sm font-medium text-[#0f766e]"
+                >
+                  เปิด PDF ที่บันทึกแล้ว: {selectedAcpVisit.advanceCarePlan.fileName}
+                </a>
+              ) : null}
+            </div>
+          </Box>
+        </section>
+      ) : null}
+
       {!isUnitManager && (!isUnitNurse || nurseTab === "visit") ? (
         <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <Box
@@ -4699,6 +5297,15 @@ export function PalliativeWorkspace({
                               {visit.note}
                             </div>
                             <VisitClinicalSummary clinical={visit.clinical} />
+                            {visit.advanceCarePlan ? (
+                              <a
+                                href={visit.advanceCarePlan.url}
+                                target="_blank"
+                                className="mt-3 inline-flex rounded-full border border-[#0f766e33] bg-[#ebfaf6] px-3 py-1 text-xs font-medium text-[#0f766e]"
+                              >
+                                เปิด PDF ACP/LW
+                              </a>
+                            ) : null}
                             <div className="mt-3 flex flex-wrap gap-2">
                               {Object.entries(visit.checklist)
                                 .filter(([, active]) => active)

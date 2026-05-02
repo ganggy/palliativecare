@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS palliative_visits (
   note TEXT NULL,
   checklist_json JSON NOT NULL,
   clinical_json JSON NULL,
+  acp_json JSON NULL,
   photos_json JSON NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),

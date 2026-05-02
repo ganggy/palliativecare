@@ -11,6 +11,8 @@ import {
   validateVisitSubmission,
 } from "./rules";
 import type {
+  AdvanceCarePlanDocument,
+  AdvanceCarePlanForm,
   AppGuide,
   AppSnapshot,
   AppUser,
@@ -1291,6 +1293,36 @@ export function updateVisitRecord(
   const patient = patients.find((item) => item.id === visit.patientId);
   if (patient) refreshPatientMetrics(patient);
   return clone(visit);
+}
+
+export function updateVisitAdvanceCarePlanRecord(
+  visitId: number,
+  input: {
+    actorUserId: string;
+    form: AdvanceCarePlanForm;
+    fileName: string;
+    url: string;
+  },
+) {
+  const actor = users.find((item) => item.id === input.actorUserId);
+  const visit = visits.find((item) => item.id === visitId);
+  if (!actor || !visit) throw new Error("ไม่พบข้อมูลการเยี่ยมหรือผู้ใช้งาน");
+  const canEditAll =
+    actor.role === "hospital_admin" || actor.role === "hospital_case_manager";
+  if (!canEditAll && actor.unitId !== visit.unitId) {
+    throw new Error("บันทึก ACP/LW ได้เฉพาะข้อมูลของหน่วยตัวเอง");
+  }
+  const document: AdvanceCarePlanDocument = {
+    id: `acp-${visitId}-${Date.now()}`,
+    fileName: input.fileName,
+    url: input.url,
+    createdAt: nowIso(),
+    createdByUserId: actor.id,
+    createdByName: actor.displayName,
+    form: input.form,
+  };
+  visit.advanceCarePlan = document;
+  return { ok: true, document: clone(document) };
 }
 
 export function addCommentRecord(

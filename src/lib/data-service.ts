@@ -23,6 +23,7 @@ import {
   renameUser,
   updateUserByAdmin,
   updatePatientRecord,
+  updateVisitAdvanceCarePlanRecord,
   updateVisitRecord,
 } from "./mock-store";
 import {
@@ -40,6 +41,8 @@ import {
   validateVisitSubmission,
 } from "./rules";
 import type {
+  AdvanceCarePlanDocument,
+  AdvanceCarePlanForm,
   AppSnapshot,
   AppUser,
   AuthSessionUser,
@@ -158,6 +161,7 @@ interface DbVisitRow {
   note: string;
   checklistJson: string;
   clinicalJson?: string | null;
+  acpJson?: string | null;
   photosJson: string;
   createdAt: string;
 }
@@ -461,6 +465,11 @@ async function ensureVisitClinicalSchema() {
       `ALTER TABLE palliative_visits ADD COLUMN clinical_json JSON NULL AFTER checklist_json`,
     );
   }
+  if (!columns.has("acp_json")) {
+    await pool.query(
+      `ALTER TABLE palliative_visits ADD COLUMN acp_json JSON NULL AFTER clinical_json`,
+    );
+  }
 }
 
 function buildSnapshotFromCollections(
@@ -668,6 +677,7 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
       note,
       checklist_json AS checklistJson,
       clinical_json AS clinicalJson,
+      acp_json AS acpJson,
       photos_json AS photosJson,
       created_at AS createdAt
     FROM palliative_visits
@@ -744,6 +754,10 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
     ),
     clinical: parseJson<VisitClinicalAssessment | undefined>(
       row.clinicalJson,
+      undefined,
+    ),
+    advanceCarePlan: parseJson<AdvanceCarePlanDocument | undefined>(
+      row.acpJson,
       undefined,
     ),
     photos: parseJson(row.photosJson, []),
@@ -2567,6 +2581,48 @@ export async function updateVisit(
   );
 
   return { ok: true };
+}
+
+export async function saveVisitAdvanceCarePlan(
+  visitId: number,
+  input: {
+    actorUserId: string;
+    form: AdvanceCarePlanForm;
+    fileName: string;
+    url: string;
+  },
+) {
+  if (!isDbConfigured("palliative")) {
+    return updateVisitAdvanceCarePlanRecord(visitId, input);
+  }
+
+  const snapshot = await getAppSnapshot();
+  const actor = snapshot.users.find((user) => user.id === input.actorUserId);
+  const currentVisit = snapshot.visits.find((visit) => visit.id === visitId);
+  if (!actor || !currentVisit) throw new Error("ไม่พบข้อมูลการเยี่ยมหรือผู้ใช้งาน");
+  const canEditAll =
+    actor.role === "hospital_admin" || actor.role === "hospital_case_manager";
+  if (!canEditAll && actor.unitId !== currentVisit.unitId) {
+    throw new Error("บันทึก ACP/LW ได้เฉพาะข้อมูลของหน่วยตัวเอง");
+  }
+
+  const document: AdvanceCarePlanDocument = {
+    id: `acp-${visitId}-${Date.now()}`,
+    fileName: input.fileName,
+    url: input.url,
+    createdAt: new Date().toISOString(),
+    createdByUserId: actor.id,
+    createdByName: actor.displayName,
+    form: input.form,
+  };
+
+  const pool = getPool("palliative");
+  await ensureVisitClinicalSchema();
+  await pool.query(`UPDATE palliative_visits SET acp_json = ? WHERE id = ?`, [
+    JSON.stringify(document),
+    visitId,
+  ]);
+  return { ok: true, document };
 }
 
 export async function saveComment(

@@ -126,6 +126,55 @@ export interface VisitClinicalAssessment {
   morphineSideEffectsOther?: string;
 }
 
+export interface AdvanceCarePlanForm {
+  planDate: string;
+  patientName: string;
+  patientAge?: string;
+  patientCid?: string;
+  patientAddress?: string;
+  patientPhone?: string;
+  patientBirthDate?: string;
+  regularHospital?: string;
+  insurance?: string;
+  coPlannerName?: string;
+  coPlannerCid?: string;
+  coPlannerRelation?: string;
+  coPlannerPhone?: string;
+  importantValues: string[];
+  importantValuesOther?: string;
+  unacceptableStates: string[];
+  unacceptableStatesOther?: string;
+  treatmentScope?: string;
+  treatmentScopeOther?: string;
+  otherCare?: string;
+  terminalNaturalDeath?: string;
+  preferredPlace?: string;
+  preferredPlaceOther?: string;
+  terminalOtherCare?: string;
+  proxyName?: string;
+  proxyAge?: string;
+  proxyRelation?: string;
+  proxyAddress?: string;
+  proxyPhone?: string;
+  healthStaffName?: string;
+  healthStaffProfession?: string;
+  healthStaffPhone?: string;
+  patientSignerName?: string;
+  proxySignerName?: string;
+  witness1Name?: string;
+  witness2Name?: string;
+}
+
+export interface AdvanceCarePlanDocument {
+  id: string;
+  fileName: string;
+  url: string;
+  createdAt: string;
+  createdByUserId: string;
+  createdByName: string;
+  form: AdvanceCarePlanForm;
+}
+
 export interface VisitPhoto {
   id: string;
   visitId: number;
@@ -150,6 +199,7 @@ export interface PalliativeVisit {
   note: string;
   checklist: VisitChecklist;
   clinical?: VisitClinicalAssessment;
+  advanceCarePlan?: AdvanceCarePlanDocument;
   photos: VisitPhoto[];
   createdAt: string;
 }
