@@ -133,6 +133,7 @@ export const clinicRules: ClinicRule[] = [
 ];
 
 const patientUnitOverrides: Record<string, string> = {
+  "000029230": "pcu-hospital",
   "000032660": "pcu-hospital",
 };
 
