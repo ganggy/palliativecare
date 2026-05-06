@@ -1,7 +1,9 @@
 import { CaseManagerRegistryWorkspace } from "@/components/case-manager-registry-workspace";
 import { getAppSnapshot } from "@/lib/data-service";
+import { connection } from "next/server";
 
 export default async function CaseManagerInProgressPage() {
+  await connection();
   const snapshot = await getAppSnapshot();
   return (
     <CaseManagerRegistryWorkspace
