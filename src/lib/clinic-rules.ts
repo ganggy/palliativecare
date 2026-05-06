@@ -95,7 +95,7 @@ export const clinicRules: ClinicRule[] = [
     unitKind: "rphst",
     chwpart: "47",
     amppart: "15",
-    tmbpartInclude: ["01", "1"],
+    tmbpartInclude: ["04", "4"],
     moopartInclude: ["1", "01", "4", "04", "5", "05", "9", "09", "10", "11", "12"],
     excludeDeath: true,
   },
@@ -131,6 +131,16 @@ export const clinicRules: ClinicRule[] = [
     excludeDeath: true,
   },
 ];
+
+const patientUnitOverrides: Record<string, string> = {
+  "000032660": "pcu-hospital",
+};
+
+export function getPatientUnitOverride(hn?: string): ServiceUnit | undefined {
+  const unitId = patientUnitOverrides[String(hn ?? "").trim()];
+  if (!unitId) return undefined;
+  return serviceUnits.find((unit) => unit.id === unitId);
+}
 
 function quoteList(values: string[]): string {
   return values.map((value) => `"${value}"`).join(", ");

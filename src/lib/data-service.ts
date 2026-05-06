@@ -2,6 +2,7 @@ import {
   buildCandidateAliveSql,
   buildCandidateSql,
   clinicRules,
+  getPatientUnitOverride,
   serviceUnits,
 } from "./clinic-rules";
 import { hashPassword, issueAuthToken, verifyAuthToken, verifyPassword } from "./auth";
@@ -525,6 +526,31 @@ async function applyLctRegistryExclusions() {
   );
 }
 
+async function applyRegistryUnitOverrides() {
+  if (!isDbConfigured("palliative")) return;
+  const pool = getPool("palliative");
+  const [rows] = await pool.query(`
+    SELECT id, hn, assigned_unit_id AS assignedUnitId
+    FROM palliative_registry
+    WHERE care_status <> 'cancelled'
+  `);
+
+  for (const row of rows as Array<{ id: number; hn: string; assignedUnitId: string }>) {
+    const unit = getPatientUnitOverride(row.hn);
+    if (!unit || row.assignedUnitId === unit.id) continue;
+    await pool.query(
+      `
+        UPDATE palliative_registry
+        SET assigned_unit_id = ?,
+            assigned_unit_name = ?,
+            assigned_unit_kind = ?
+        WHERE id = ?
+      `,
+      [unit.id, unit.name, unit.kind, row.id],
+    );
+  }
+}
+
 function buildSnapshotFromCollections(
   users: AppUser[],
   units: ServiceUnit[],
@@ -664,6 +690,7 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
   await ensureVisitClinicalSchema();
   await ensureRegistryDemographicsSchema();
   await applyLctRegistryExclusions();
+  await applyRegistryUnitOverrides();
   const pool = getPool("palliative");
   const [unitRows] = await pool.query(
     `SELECT id, code, short_name AS shortName, name, kind, color, description FROM palliative_units ORDER BY sort_order ASC, name ASC`,
@@ -1239,6 +1266,13 @@ export async function getHosCandidates(
         eligibleReason: describeEligibility(primaryDxCode),
         claimChecklist: checklist,
       };
+
+      const unitOverride = getPatientUnitOverride(candidate.hn);
+      if (unitOverride) {
+        candidate.unitId = unitOverride.id;
+        candidate.clinicName = unitOverride.name;
+        candidate.clinicShortName = unitOverride.shortName;
+      }
 
       if (isLctExcludedPatientName(candidate.fullName)) {
         continue;
