@@ -32,6 +32,7 @@ import {
   classifyCandidateDxGroup,
   defaultVisitChecklist,
   describeEligibility,
+  isLctExcludedPatientName,
   isDateWithinWindow,
   isOpioidEligibleCode,
   monthKey,
@@ -499,6 +500,31 @@ async function ensureRegistryDemographicsSchema() {
   }
 }
 
+async function applyLctRegistryExclusions() {
+  if (!isDbConfigured("palliative")) return;
+  const pool = getPool("palliative");
+  const [rows] = await pool.query(`
+    SELECT id, full_name AS fullName
+    FROM palliative_registry
+    WHERE care_status <> 'cancelled'
+  `);
+  const excludedIds = (rows as Array<{ id: number; fullName: string }>)
+    .filter((row) => isLctExcludedPatientName(row.fullName))
+    .map((row) => row.id);
+  if (!excludedIds.length) return;
+
+  await pool.query(
+    `
+      UPDATE palliative_registry
+      SET care_status = 'cancelled',
+          cancellation_reason = 'อยู่ในระบบ LCT แล้ว',
+          next_visit_at = NULL
+      WHERE id IN (?)
+    `,
+    [excludedIds],
+  );
+}
+
 function buildSnapshotFromCollections(
   users: AppUser[],
   units: ServiceUnit[],
@@ -637,6 +663,7 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
   await ensureAuthSchema();
   await ensureVisitClinicalSchema();
   await ensureRegistryDemographicsSchema();
+  await applyLctRegistryExclusions();
   const pool = getPool("palliative");
   const [unitRows] = await pool.query(
     `SELECT id, code, short_name AS shortName, name, kind, color, description FROM palliative_units ORDER BY sort_order ASC, name ASC`,
@@ -751,31 +778,34 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
   const users = normalizeDbUsers(userRows as DbUserRow[], units);
   const unitNameById = new Map(units.map((unit) => [unit.id, unit.name] as const));
   const unitKindById = new Map(units.map((unit) => [unit.id, unit.kind] as const));
-  const patients: PalliativePatient[] = (patientRows as DbPatientRow[]).map((row) => ({
-    ...row,
-    birthday: asDateKey(row.birthday) || undefined,
-    insuranceGroup: row.insuranceGroup ?? undefined,
-    assignedUnitName: unitNameById.get(row.assignedUnitId) ?? row.assignedUnitName,
-    assignedUnitKind:
-      (unitKindById.get(row.assignedUnitId) as PalliativePatient["assignedUnitKind"] | undefined) ??
-      row.assignedUnitKind,
-    phone: row.phone ?? undefined,
-    relativePhone: row.relativePhone ?? undefined,
-    lineId: row.lineId ?? undefined,
-    address: row.address ?? undefined,
-    notes: row.notes ?? "",
-    lastVisitAt: row.lastVisitAt ?? undefined,
-    nextVisitAt: row.nextVisitAt ?? undefined,
-    cancellationReason: row.cancellationReason ?? undefined,
-    dischargedAt: row.dischargedAt ?? undefined,
-    visitWindow: {
-      startDate: row.visitWindowStart,
-      endDate: row.visitWindowEnd,
-    },
-    claimChecklist: parseJson(row.claimChecklistJson, buildClaimChecklist({})),
-    historicalVisitDates: [],
-    commentCount: 0,
-  }));
+  const patients: PalliativePatient[] = (patientRows as DbPatientRow[])
+    .map((row) => ({
+      ...row,
+      birthday: asDateKey(row.birthday) || undefined,
+      insuranceGroup: row.insuranceGroup ?? undefined,
+      assignedUnitName: unitNameById.get(row.assignedUnitId) ?? row.assignedUnitName,
+      assignedUnitKind:
+        (unitKindById.get(row.assignedUnitId) as
+          | PalliativePatient["assignedUnitKind"]
+          | undefined) ?? row.assignedUnitKind,
+      phone: row.phone ?? undefined,
+      relativePhone: row.relativePhone ?? undefined,
+      lineId: row.lineId ?? undefined,
+      address: row.address ?? undefined,
+      notes: row.notes ?? "",
+      lastVisitAt: row.lastVisitAt ?? undefined,
+      nextVisitAt: row.nextVisitAt ?? undefined,
+      cancellationReason: row.cancellationReason ?? undefined,
+      dischargedAt: row.dischargedAt ?? undefined,
+      visitWindow: {
+        startDate: row.visitWindowStart,
+        endDate: row.visitWindowEnd,
+      },
+      claimChecklist: parseJson(row.claimChecklistJson, buildClaimChecklist({})),
+      historicalVisitDates: [],
+      commentCount: 0,
+    }))
+    .filter((patient) => !isLctExcludedPatientName(patient.fullName));
   const visits = (visitRows as DbVisitRow[]).map((row) => ({
     ...row,
     rescheduledFrom: row.rescheduledFrom ?? undefined,
@@ -1069,9 +1099,12 @@ function pickBetterCandidate(
 async function getRegisteredIdentifiers() {
   if (!isDbConfigured("palliative")) {
     const snapshot = getSnapshot();
+    const patients = snapshot.patients.filter(
+      (patient) => !isLctExcludedPatientName(patient.fullName),
+    );
     return {
-      hnSet: new Set(snapshot.patients.map((patient) => patient.hn)),
-      cidSet: new Set(snapshot.patients.map((patient) => patient.cid)),
+      hnSet: new Set(patients.map((patient) => patient.hn)),
+      cidSet: new Set(patients.map((patient) => patient.cid)),
     };
   }
 
@@ -1133,6 +1166,7 @@ export async function getHosCandidates(
           ? true
           : !registered.hnSet.has(row.hn) && !registered.cidSet.has(row.cid),
       )
+      .filter((row) => !isLctExcludedPatientName(row.fullName))
       .filter(
         (row) =>
           !searchTerm.trim() ||
@@ -1205,6 +1239,10 @@ export async function getHosCandidates(
         eligibleReason: describeEligibility(primaryDxCode),
         claimChecklist: checklist,
       };
+
+      if (isLctExcludedPatientName(candidate.fullName)) {
+        continue;
+      }
 
       const keyword = searchTerm.trim().toLowerCase();
       if (
@@ -2172,6 +2210,9 @@ export async function registerHosCandidate(
     careStatus?: PalliativePatient["careStatus"];
   },
 ) {
+  if (isLctExcludedPatientName(candidate.fullName)) {
+    throw new Error("ผู้ป่วยรายนี้อยู่ในระบบ LCT แล้ว");
+  }
   if (isDbConfigured("hos") && !hasAllowedInsuranceGroup(candidate.insuranceGroup)) {
     throw new Error("ต้องเป็นสิทธิ์ UCS หรือ WEL เท่านั้น");
   }
