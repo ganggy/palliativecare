@@ -3,6 +3,7 @@ import {
   buildCandidateSql,
   clinicRules,
   getPatientUnitOverride,
+  getServiceUnitByPatientArea,
   serviceUnits,
 } from "./clinic-rules";
 import { hashPassword, issueAuthToken, verifyAuthToken, verifyPassword } from "./auth";
@@ -534,9 +535,41 @@ async function applyRegistryUnitOverrides() {
     FROM palliative_registry
     WHERE care_status <> 'cancelled'
   `);
+  const registryRows = rows as Array<{
+    id: number;
+    hn: string;
+    assignedUnitId: string;
+  }>;
+  const areaByHn = new Map<
+    string,
+    { chwpart?: string; amppart?: string; tmbpart?: string; moopart?: string }
+  >();
 
-  for (const row of rows as Array<{ id: number; hn: string; assignedUnitId: string }>) {
-    const unit = getPatientUnitOverride(row.hn);
+  if (isDbConfigured("hos") && registryRows.length) {
+    const hosPool = getPool("hos");
+    const [patientRows] = await hosPool.query(
+      `
+        SELECT hn, chwpart, amppart, tmbpart, moopart
+        FROM patient
+        WHERE hn IN (?)
+      `,
+      [registryRows.map((row) => row.hn)],
+    );
+    for (const patientRow of patientRows as Array<{
+      hn: string;
+      chwpart?: string;
+      amppart?: string;
+      tmbpart?: string;
+      moopart?: string;
+    }>) {
+      areaByHn.set(String(patientRow.hn ?? "").trim(), patientRow);
+    }
+  }
+
+  for (const row of registryRows) {
+    const unit =
+      getPatientUnitOverride(row.hn) ??
+      getServiceUnitByPatientArea(areaByHn.get(row.hn));
     if (!unit || row.assignedUnitId === unit.id) continue;
     await pool.query(
       `

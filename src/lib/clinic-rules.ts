@@ -143,15 +143,60 @@ export function getPatientUnitOverride(hn?: string): ServiceUnit | undefined {
   return serviceUnits.find((unit) => unit.id === unitId);
 }
 
+function normalizeAreaPart(value?: unknown): string {
+  return String(value ?? "").trim().replace(/^0+(\d)$/, "$1");
+}
+
+function includesAreaPart(values: string[], value?: unknown): boolean {
+  const raw = String(value ?? "").trim();
+  const normalized = normalizeAreaPart(value);
+  return values.includes(raw) || values.includes(normalized);
+}
+
+export function getServiceUnitByPatientArea(input: {
+  chwpart?: unknown;
+  amppart?: unknown;
+  tmbpart?: unknown;
+  moopart?: unknown;
+} | undefined): ServiceUnit | undefined {
+  if (!input) return undefined;
+  const rule = clinicRules.find((item) => {
+    if (normalizeAreaPart(input.chwpart) !== normalizeAreaPart(item.chwpart)) {
+      return false;
+    }
+    if (normalizeAreaPart(input.amppart) !== normalizeAreaPart(item.amppart)) {
+      return false;
+    }
+    if (!includesAreaPart(item.tmbpartInclude, input.tmbpart)) {
+      return false;
+    }
+    if (
+      item.moopartInclude?.length &&
+      !includesAreaPart(item.moopartInclude, input.moopart)
+    ) {
+      return false;
+    }
+    if (
+      item.moopartExclude?.length &&
+      includesAreaPart(item.moopartExclude, input.moopart)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  return rule ? serviceUnits.find((unit) => unit.id === rule.unitId) : undefined;
+}
+
 function quoteList(values: string[]): string {
   return values.map((value) => `"${value}"`).join(", ");
 }
 
-export function buildClinicWhereClause(rule: ClinicRule, areaAlias = "p", visitAreaAlias = "va", deathAlias = "p"): string {
+export function buildClinicWhereClause(rule: ClinicRule, areaAlias = "p", _visitAreaAlias = "va", deathAlias = "p"): string {
   const fragments = [
-    `COALESCE(${visitAreaAlias}.chwpart, ${areaAlias}.chwpart) = "${rule.chwpart}"`,
-    `COALESCE(${visitAreaAlias}.amppart, ${areaAlias}.amppart) = "${rule.amppart}"`,
-    `COALESCE(${visitAreaAlias}.tmbpart, ${areaAlias}.tmbpart) IN (${quoteList(rule.tmbpartInclude)})`,
+    `${areaAlias}.chwpart = "${rule.chwpart}"`,
+    `${areaAlias}.amppart = "${rule.amppart}"`,
+    `${areaAlias}.tmbpart IN (${quoteList(rule.tmbpartInclude)})`,
   ];
 
   if (rule.moopartInclude?.length) {
