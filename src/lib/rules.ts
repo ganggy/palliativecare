@@ -5,6 +5,10 @@ import type {
   VisitChecklist,
   VisitWindow,
 } from "./types";
+import {
+  BUDGET_2569_EXCLUDED_PATIENT_CIDS,
+  BUDGET_2569_EXCLUDED_PATIENT_NAMES,
+} from "./registry-exclusions";
 
 export const REQUIRED_COMPLETE_VISITS = 6;
 
@@ -71,13 +75,39 @@ function normalizePersonName(value?: string): string {
     .trim();
 }
 
-const lctExcludedPatientNameSet = new Set(
-  LCT_EXCLUDED_PATIENT_NAMES.map((name) => normalizePersonName(name)),
+function normalizeIdentifier(value?: string): string {
+  return (value ?? "").replace(/\D/g, "").trim();
+}
+
+const registryExcludedPatientNameSet = new Set(
+  [...LCT_EXCLUDED_PATIENT_NAMES, ...BUDGET_2569_EXCLUDED_PATIENT_NAMES].map(
+    (name) => normalizePersonName(name),
+  ),
+);
+
+const registryExcludedPatientCidSet = new Set(
+  BUDGET_2569_EXCLUDED_PATIENT_CIDS.map((cid) => normalizeIdentifier(cid)),
 );
 
 export function isLctExcludedPatientName(value?: string): boolean {
+  return isRegistryExcludedPatientName(value);
+}
+
+export function isRegistryExcludedPatientName(value?: string): boolean {
   const normalized = normalizePersonName(value);
-  return Boolean(normalized && lctExcludedPatientNameSet.has(normalized));
+  return Boolean(normalized && registryExcludedPatientNameSet.has(normalized));
+}
+
+export function isRegistryExcludedPatient(input: {
+  cid?: string;
+  fullName?: string;
+}): boolean {
+  const normalizedCid = normalizeIdentifier(input.cid);
+  if (normalizedCid && registryExcludedPatientCidSet.has(normalizedCid)) {
+    return true;
+  }
+
+  return isRegistryExcludedPatientName(input.fullName);
 }
 
 function normalize(code?: string): string {

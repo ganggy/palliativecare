@@ -34,7 +34,7 @@ import {
   classifyCandidateDxGroup,
   defaultVisitChecklist,
   describeEligibility,
-  isLctExcludedPatientName,
+  isRegistryExcludedPatient,
   isDateWithinWindow,
   isOpioidEligibleCode,
   monthKey,
@@ -506,12 +506,12 @@ async function applyLctRegistryExclusions() {
   if (!isDbConfigured("palliative")) return;
   const pool = getPool("palliative");
   const [rows] = await pool.query(`
-    SELECT id, full_name AS fullName
+    SELECT id, cid, full_name AS fullName
     FROM palliative_registry
     WHERE care_status <> 'cancelled'
   `);
-  const excludedIds = (rows as Array<{ id: number; fullName: string }>)
-    .filter((row) => isLctExcludedPatientName(row.fullName))
+  const excludedIds = (rows as Array<{ id: number; cid?: string; fullName: string }>)
+    .filter((row) => isRegistryExcludedPatient(row))
     .map((row) => row.id);
   if (!excludedIds.length) return;
 
@@ -519,7 +519,7 @@ async function applyLctRegistryExclusions() {
     `
       UPDATE palliative_registry
       SET care_status = 'cancelled',
-          cancellation_reason = 'อยู่ในระบบ LCT แล้ว',
+          cancellation_reason = 'อยู่ในระบบ LCT/งบประมาณ 2569 แล้ว',
           next_visit_at = NULL
       WHERE id IN (?)
     `,
@@ -865,7 +865,7 @@ async function loadDbSnapshot(): Promise<AppSnapshot> {
       historicalVisitDates: [],
       commentCount: 0,
     }))
-    .filter((patient) => !isLctExcludedPatientName(patient.fullName));
+    .filter((patient) => !isRegistryExcludedPatient(patient));
   const visits = (visitRows as DbVisitRow[]).map((row) => ({
     ...row,
     rescheduledFrom: row.rescheduledFrom ?? undefined,
@@ -1160,7 +1160,7 @@ async function getRegisteredIdentifiers() {
   if (!isDbConfigured("palliative")) {
     const snapshot = getSnapshot();
     const patients = snapshot.patients.filter(
-      (patient) => !isLctExcludedPatientName(patient.fullName),
+      (patient) => !isRegistryExcludedPatient(patient),
     );
     return {
       hnSet: new Set(patients.map((patient) => patient.hn)),
@@ -1226,7 +1226,7 @@ export async function getHosCandidates(
           ? true
           : !registered.hnSet.has(row.hn) && !registered.cidSet.has(row.cid),
       )
-      .filter((row) => !isLctExcludedPatientName(row.fullName))
+      .filter((row) => !isRegistryExcludedPatient(row))
       .filter(
         (row) =>
           !searchTerm.trim() ||
@@ -1307,7 +1307,7 @@ export async function getHosCandidates(
         candidate.clinicShortName = unitOverride.shortName;
       }
 
-      if (isLctExcludedPatientName(candidate.fullName)) {
+      if (isRegistryExcludedPatient(candidate)) {
         continue;
       }
 
@@ -2277,8 +2277,8 @@ export async function registerHosCandidate(
     careStatus?: PalliativePatient["careStatus"];
   },
 ) {
-  if (isLctExcludedPatientName(candidate.fullName)) {
-    throw new Error("ผู้ป่วยรายนี้อยู่ในระบบ LCT แล้ว");
+  if (isRegistryExcludedPatient(candidate)) {
+    throw new Error("ผู้ป่วยรายนี้อยู่ในระบบ LCT/งบประมาณ 2569 แล้ว");
   }
   if (isDbConfigured("hos") && !hasAllowedInsuranceGroup(candidate.insuranceGroup)) {
     throw new Error("ต้องเป็นสิทธิ์ UCS หรือ WEL เท่านั้น");
