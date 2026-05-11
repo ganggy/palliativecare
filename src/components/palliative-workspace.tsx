@@ -933,7 +933,7 @@ export function PalliativeWorkspace({
     "ข้อมูลไม่เข้าเกณฑ์ / ย้ายการดูแล",
   );
   const [visitDraft, setVisitDraft] = useState({
-    visitDate: initialPatient?.nextVisitAt ?? initialSnapshot.currentDate,
+    visitDate: initialSnapshot.currentDate,
     authenCode: "",
     symptoms: "",
     note: "",
@@ -1999,7 +1999,7 @@ export function PalliativeWorkspace({
       assignedUnitId: patient.assignedUnitId,
     });
     setVisitDraft({
-      visitDate: patient.nextVisitAt ?? sourceSnapshot.currentDate,
+      visitDate: sourceSnapshot.currentDate,
       authenCode: "",
       symptoms: "",
       note: "",
