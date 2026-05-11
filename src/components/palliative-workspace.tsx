@@ -422,6 +422,53 @@ function VisitClinicalSummary({
   );
 }
 
+function isSavedDataNotice(notice: string | null) {
+  if (!notice) return false;
+  return (
+    notice.startsWith("บันทึก") ||
+    notice.startsWith("แก้ไขข้อมูลที่ส่งแล้ว") ||
+    notice.startsWith("นำเข้า STM/REP แล้ว")
+  );
+}
+
+function SavedDataNotice({
+  notice,
+  canViewDailyVisits,
+  canViewRegistry,
+}: {
+  notice: string | null;
+  canViewDailyVisits: boolean;
+  canViewRegistry: boolean;
+}) {
+  if (!notice) return null;
+  const showLinks = isSavedDataNotice(notice);
+  return (
+    <div className={`rounded-[1.2rem] border px-4 py-3 text-sm shadow-sm ${showLinks ? "border-[#b8eadf] bg-[#eefbf7] text-[#0f5132]" : "border-[#d9e5ec] bg-[#f7fbfd] text-[#5f7486]"}`}>
+      <div className="font-medium">{notice}</div>
+      {showLinks ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {canViewDailyVisits ? (
+            <Link
+              href="/daily-visits"
+              className="rounded-xl border border-[#0f766e33] bg-white px-3 py-2 text-xs font-medium text-[#0f766e]"
+            >
+              ดูข้อมูลเยี่ยมที่บันทึก
+            </Link>
+          ) : null}
+          {canViewRegistry ? (
+            <Link
+              href="/case-manager/registry"
+              className="rounded-xl border border-[#12304722] bg-white px-3 py-2 text-xs font-medium text-[#123047]"
+            >
+              ดูทะเบียนข้อมูลผู้ป่วย
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SignaturePad({
   label,
   value,
@@ -2368,8 +2415,8 @@ export function PalliativeWorkspace({
             clinical: visitClinical,
             photos,
           }),
-        }),
-      "บันทึกการเยี่ยมแล้ว",
+      }),
+      "บันทึกข้อมูลการเยี่ยมแล้ว",
       () => {
         setVisitChecklist(defaultVisitChecklistState);
         setVisitClinical(createDefaultClinicalAssessment());
@@ -2463,8 +2510,8 @@ export function PalliativeWorkspace({
             actorUserId: currentUser.id,
             photos,
           }),
-        }),
-      "แก้ไขข้อมูลที่ส่งแล้ว",
+      }),
+      "บันทึกข้อมูลการเยี่ยมแล้ว",
       () => {
         setEditingVisitId(null);
         setDailyPatientCardFiles([null]);
@@ -2938,6 +2985,12 @@ export function PalliativeWorkspace({
           </div>
         </header>
 
+        <SavedDataNotice
+          notice={notice}
+          canViewDailyVisits={canViewDailyVisits}
+          canViewRegistry={isHospitalBoard}
+        />
+
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
           {[
             ["เยี่ยมทั้งหมด", dailyVisitStats.visitCount],
@@ -3198,6 +3251,11 @@ export function PalliativeWorkspace({
                         >
                           บันทึกการแก้ไข
                         </button>
+                        <SavedDataNotice
+                          notice={notice}
+                          canViewDailyVisits={canViewDailyVisits}
+                          canViewRegistry={isHospitalBoard}
+                        />
                       </div>
                     ) : (
                       <div className="mt-4 grid gap-3 md:grid-cols-[0.7fr_1fr_1fr]">
@@ -3600,9 +3658,6 @@ export function PalliativeWorkspace({
                     ?.name ?? "-"}
                 </div>
               </div>
-              {notice ? (
-                <div className="mt-3 text-sm text-white/90">{notice}</div>
-              ) : null}
             </div>
           </div>
         ) : (
@@ -3698,13 +3753,15 @@ export function PalliativeWorkspace({
                   </div>
                 ) : null}
               </div>
-              {notice ? (
-                <div className="mt-3 text-sm text-white/90">{notice}</div>
-              ) : null}
             </div>
           </div>
         )}
       </header>
+      <SavedDataNotice
+        notice={notice}
+        canViewDailyVisits={canViewDailyVisits}
+        canViewRegistry={isHospitalBoard}
+      />
       {isUnitNurse ? (
         <section className="rounded-[1.8rem] border border-[rgba(20,55,84,0.12)] bg-white p-4 shadow-[0_20px_50px_rgba(8,33,51,0.08)]">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -5248,6 +5305,11 @@ export function PalliativeWorkspace({
                       </>
                     ) : null}
                   </div>
+                  <SavedDataNotice
+                    notice={notice}
+                    canViewDailyVisits={canViewDailyVisits}
+                    canViewRegistry={isHospitalBoard}
+                  />
                 </>
               ) : (
                 <div className="text-sm text-[#6f8190]">
@@ -5549,6 +5611,11 @@ export function PalliativeWorkspace({
                     >
                       บันทึกการเยี่ยมครั้งนี้
                     </button>
+                    <SavedDataNotice
+                      notice={notice}
+                      canViewDailyVisits={canViewDailyVisits}
+                      canViewRegistry={isHospitalBoard}
+                    />
                   </div>
                   <div className="space-y-3">
                     {selectedVisits.length ? (
