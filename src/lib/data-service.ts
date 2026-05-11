@@ -2631,6 +2631,7 @@ export async function updateVisit(
     note: string;
     checklist: VisitChecklist;
     clinical?: VisitClinicalAssessment;
+    photos?: Array<{ url: string; fileName: string; caption?: string }>;
   },
 ) {
   if (!isDbConfigured("palliative")) {
@@ -2646,16 +2647,25 @@ export async function updateVisit(
   if (!canEditAll && actor.unitId !== currentVisit.unitId) {
     throw new Error("แก้ไขได้เฉพาะข้อมูลของหน่วยตัวเอง");
   }
+  const addedPhotos = (input.photos ?? []).map((photo, index) => ({
+    id: `photo-${visitId}-${currentVisit.photos.length + index + 1}`,
+    visitId,
+    fileName: photo.fileName,
+    url: photo.url,
+    caption: photo.caption,
+    capturedAt: new Date().toISOString(),
+  }));
+  const photos = [...currentVisit.photos, ...addedPhotos];
 
   validateVisitSubmission({
     visitDate: input.visitDate,
     authenCode: input.authenCode,
     symptoms: input.symptoms,
-    photosCount: currentVisit.photos.length,
+    photosCount: photos.length,
   });
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
-    hasPhoto: currentVisit.photos.length > 0,
+    hasPhoto: photos.length > 0,
     hasSymptoms: Boolean(input.symptoms.trim()),
   });
   const pool = getPool("palliative");
@@ -2668,7 +2678,8 @@ export async function updateVisit(
           symptoms = ?,
           note = ?,
           checklist_json = ?,
-          clinical_json = ?
+          clinical_json = ?,
+          photos_json = ?
       WHERE id = ?
     `,
     [
@@ -2678,6 +2689,7 @@ export async function updateVisit(
       input.note.trim(),
       JSON.stringify(normalizedChecklist),
       JSON.stringify(input.clinical ?? null),
+      JSON.stringify(photos),
       visitId,
     ],
   );

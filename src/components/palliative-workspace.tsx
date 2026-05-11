@@ -681,7 +681,7 @@ function getSelfNavigationActions(role?: UserRole) {
       { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
       { href: "/executive", label: "ไปหน้าผู้บริหาร" },
       { href: "/card-room", label: "ไปหน้าห้องบัตร" },
-      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+      { href: "/daily-visits", label: "รายงานเยี่ยมรายวัน" },
     ];
   }
   if (role === "hospital_case_manager") {
@@ -690,7 +690,7 @@ function getSelfNavigationActions(role?: UserRole) {
       { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
       { href: "/executive", label: "ไปหน้าผู้บริหาร" },
       { href: "/card-room", label: "ไปหน้าห้องบัตร" },
-      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+      { href: "/daily-visits", label: "รายงานเยี่ยมรายวัน" },
     ];
   }
   if (role === "hospital_executive") {
@@ -702,19 +702,19 @@ function getSelfNavigationActions(role?: UserRole) {
   if (role === "unit_manager") {
     return [
       { href: "/unit-overview", label: "ไปหน้าภาพรวมหน่วย" },
-      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+      { href: "/daily-visits", label: "รายงานเยี่ยมรายวัน" },
     ];
   }
   if (role === "unit_nurse") {
     return [
       { href: "/nurse", label: "ไปหน้าพยาบาลหน่วย" },
-      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+      { href: "/daily-visits", label: "รายงานเยี่ยมรายวัน" },
     ];
   }
   if (role === "hospital_pcu") {
     return [
       { href: "/case-manager/registry", label: "ไปหน้าทะเบียนเคส" },
-      { href: "/daily-visits", label: "ข้อมูลส่งรายวัน" },
+      { href: "/daily-visits", label: "รายงานเยี่ยมรายวัน" },
     ];
   }
   return [];
@@ -732,7 +732,16 @@ async function requestJson(url: string, init?: RequestInit, authToken?: string) 
     },
   });
   const text = await response.text();
-  if (!response.ok) throw new Error(text || "Request failed");
+  if (!response.ok) {
+    let message = text || "Request failed";
+    try {
+      const payload = JSON.parse(text) as { error?: string };
+      message = payload.error || message;
+    } catch {
+      // Keep the raw response text when the server did not return JSON.
+    }
+    throw new Error(message);
+  }
   if (response.status === 204 || !text.trim()) return null;
   try {
     return JSON.parse(text);
@@ -936,6 +945,10 @@ export function PalliativeWorkspace({
   );
   const [dailyVisitClinical, setDailyVisitClinical] =
     useState<VisitClinicalAssessment>(createDefaultClinicalAssessment);
+  const [dailyPatientCardFiles, setDailyPatientCardFiles] = useState<Array<FileList | null>>([null]);
+  const [dailyFollowUpFiles, setDailyFollowUpFiles] = useState<Array<FileList | null>>([null]);
+  const [dailyPatientCardFileInputKey, setDailyPatientCardFileInputKey] = useState(0);
+  const [dailyFollowUpFileInputKey, setDailyFollowUpFileInputKey] = useState(0);
   const [pendingRequests, setPendingRequests] = useState<PendingUserRequest[]>([]);
   const [newUserDraft, setNewUserDraft] = useState({
     username: "",
@@ -1447,6 +1460,35 @@ export function PalliativeWorkspace({
     snapshot.units,
     snapshot.visits,
   ]);
+  const dailyVisitStats = useMemo(() => {
+    const patientIds = new Set<number>();
+    const visitorNames = new Set<string>();
+    const unitNames = new Set<string>();
+    let authenCount = 0;
+    let photoCount = 0;
+    let completeChecklistCount = 0;
+
+    for (const { visit, patient, unitName } of dailyVisitRows) {
+      patientIds.add(patient?.id ?? visit.patientId);
+      visitorNames.add(visit.visitorName);
+      unitNames.add(unitName);
+      if (visit.authenCode?.trim()) authenCount += 1;
+      photoCount += visit.photos.length;
+      if (Object.values(visit.checklist).every(Boolean)) {
+        completeChecklistCount += 1;
+      }
+    }
+
+    return {
+      authenCount,
+      completeChecklistCount,
+      patientCount: patientIds.size,
+      photoCount,
+      unitCount: unitNames.size,
+      visitorCount: visitorNames.size,
+      visitCount: dailyVisitRows.length,
+    };
+  }, [dailyVisitRows]);
 
   useEffect(() => {
     if (!selectedPatient?.hn) {
@@ -1946,7 +1988,27 @@ export function PalliativeWorkspace({
     startTransition(() => {
       void task()
         .then(async () => {
-          const nextSnapshot = await refresh();
+          let nextSnapshot: AppSnapshot | null = null;
+          let refreshError: unknown = null;
+          for (let attempt = 0; attempt < 2; attempt += 1) {
+            try {
+              nextSnapshot = await refresh();
+              refreshError = null;
+              break;
+            } catch (error) {
+              refreshError = error;
+            }
+          }
+          if (!nextSnapshot) {
+            afterSuccess?.();
+            setNotice(
+              `${successMessage} แต่รีเฟรชข้อมูลล่าสุดไม่สำเร็จ กรุณากดรีเฟรชอีกครั้ง`,
+            );
+            if (refreshError instanceof Error) {
+              console.error(refreshError);
+            }
+            return;
+          }
           const nextUser = nextSnapshot.users.find(
             (user) => user.id === activeUserId,
           );
@@ -2350,9 +2412,13 @@ export function PalliativeWorkspace({
     });
     setDailyVisitChecklist(visit.checklist);
     setDailyVisitClinical(visit.clinical ?? createDefaultClinicalAssessment());
+    setDailyPatientCardFiles([null]);
+    setDailyFollowUpFiles([null]);
+    setDailyPatientCardFileInputKey((value) => value + 1);
+    setDailyFollowUpFileInputKey((value) => value + 1);
   };
 
-  const saveDailyVisitEdit = () => {
+  const saveDailyVisitEdit = async () => {
     if (!editingVisitId || !currentUser) return;
     if (!dailyVisitDraft.visitDate) {
       setNotice("กรุณาระบุวันที่เยี่ยม");
@@ -2366,6 +2432,24 @@ export function PalliativeWorkspace({
       setNotice("กรุณาบันทึกอาการติดตาม");
       return;
     }
+    const visit = snapshot.visits.find((item) => item.id === editingVisitId);
+    if (!visit) {
+      setNotice("ไม่พบข้อมูลการเยี่ยมที่ต้องการแก้ไข");
+      return;
+    }
+    const cardPhotos = await fileGroupsToPayloadWithCaption(
+      dailyPatientCardFiles,
+      "patient-card",
+    );
+    const followUpPhotos = await fileGroupsToPayloadWithCaption(
+      dailyFollowUpFiles,
+      "follow-up",
+    );
+    const photos = [...cardPhotos, ...followUpPhotos];
+    const normalizedChecklist: VisitChecklist = {
+      ...dailyVisitChecklist,
+      photoCaptured: dailyVisitChecklist.photoCaptured || visit.photos.length + photos.length > 0,
+    };
 
     run(
       () =>
@@ -2373,13 +2457,21 @@ export function PalliativeWorkspace({
           method: "PATCH",
           body: JSON.stringify({
             ...dailyVisitDraft,
-            checklist: dailyVisitChecklist,
+            patientId: visit.patientId,
+            checklist: normalizedChecklist,
             clinical: dailyVisitClinical,
             actorUserId: currentUser.id,
+            photos,
           }),
         }),
       "แก้ไขข้อมูลที่ส่งแล้ว",
-      () => setEditingVisitId(null),
+      () => {
+        setEditingVisitId(null);
+        setDailyPatientCardFiles([null]);
+        setDailyFollowUpFiles([null]);
+        setDailyPatientCardFileInputKey((value) => value + 1);
+        setDailyFollowUpFileInputKey((value) => value + 1);
+      },
     );
   };
 
@@ -2795,13 +2887,13 @@ export function PalliativeWorkspace({
           <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-end">
             <div>
               <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/85">
-                Daily Submissions
+                รายงานพยาบาล
               </div>
               <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-                ข้อมูลที่ส่งรายวัน
+                รายงานการเยี่ยมรายวัน
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-8 text-white/85 sm:text-lg">
-                ดูรายการคนไข้ที่ส่งข้อมูลในวันที่เลือก และแก้ไขข้อมูลเยี่ยมบ้านที่ส่งมาได้ทันที
+                ตรวจจำนวนการเยี่ยมในแต่ละวัน รายชื่อคนไข้ ผู้บันทึก Authen code รูปภาพ และความครบถ้วนของ checklist
               </p>
             </div>
             <div className="rounded-[1.8rem] border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
@@ -2846,8 +2938,24 @@ export function PalliativeWorkspace({
           </div>
         </header>
 
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            ["เยี่ยมทั้งหมด", dailyVisitStats.visitCount],
+            ["คนไข้ไม่ซ้ำ", dailyVisitStats.patientCount],
+            ["มี Authen", dailyVisitStats.authenCount],
+            ["Checklist ครบ", dailyVisitStats.completeChecklistCount],
+            ["รูปภาพ", dailyVisitStats.photoCount],
+            [isHospitalBoard ? "หน่วยที่ส่ง" : "ผู้บันทึก", isHospitalBoard ? dailyVisitStats.unitCount : dailyVisitStats.visitorCount],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-[1.2rem] border border-[#d9e5ec] bg-white px-4 py-3 shadow-sm">
+              <div className="text-xs text-[#6f8190]">{label}</div>
+              <div className="mt-1 text-2xl font-semibold text-[#123047]">{value}</div>
+            </div>
+          ))}
+        </div>
+
         <Box
-          title="รายการที่ส่งในวันที่เลือก"
+          title="รายการเยี่ยมในวันที่เลือก"
           note={isHospitalBoard ? "โรงพยาบาลดูได้ทุกหน่วย" : "รพ.สต./PCU ดูและแก้ไขเฉพาะข้อมูลของหน่วยตัวเอง"}
         >
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2875,6 +2983,9 @@ export function PalliativeWorkspace({
             {dailyVisitRows.length ? (
               dailyVisitRows.map(({ visit, patient, unitName }) => {
                 const isEditing = editingVisitId === visit.id;
+                const missingChecklistLabels = Object.entries(visitChecklistLabels)
+                  .filter(([key]) => !visit.checklist[key as keyof VisitChecklist])
+                  .map(([, label]) => label);
                 return (
                   <div key={visit.id} className="rounded-[1.5rem] border border-[#e2edf4] bg-[#fbfdff] p-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -2884,7 +2995,7 @@ export function PalliativeWorkspace({
                           {patient?.fullName ?? `Visit #${visit.id}`}
                         </h3>
                         <div className="mt-1 text-sm text-[#5f7486]">
-                          HN {patient?.hn ?? "-"} · เลขบัตร {patient?.cid ?? "-"} · ผู้บันทึก {visit.visitorName}
+                          วันที่ {formatDate(visit.visitDate)} · HN {patient?.hn ?? "-"} · เลขบัตร {patient?.cid ?? "-"} · ผู้บันทึก {visit.visitorName}
                         </div>
                       </div>
                       <button
@@ -2960,6 +3071,122 @@ export function PalliativeWorkspace({
                             </label>
                           ))}
                         </div>
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          <div className="rounded-2xl border border-dashed border-[#c9d9e3] bg-[#f7fbfd] px-4 py-3 text-sm">
+                            <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                              เพิ่ม{getPhotoCategoryLabel("patient-card")}
+                            </div>
+                            <div className="mt-3 space-y-3">
+                              {dailyPatientCardFiles.map((files, index) => (
+                                <div key={`${dailyPatientCardFileInputKey}-${index}`}>
+                                  <div className="mb-1 text-xs text-[#5f7486]">
+                                    รูปที่ {index + 1}
+                                  </div>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    <label className="rounded-xl border border-[#d9e5ec] bg-white px-3 py-2 text-xs text-[#123047]">
+                                      เลือกรูปจากเครื่อง
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(event) =>
+                                          setDailyPatientCardFiles((prev) =>
+                                            prev.map((item, itemIndex) =>
+                                              itemIndex === index ? event.target.files : item,
+                                            ),
+                                          )
+                                        }
+                                        className="mt-2 w-full text-sm outline-none"
+                                      />
+                                    </label>
+                                    <label className="rounded-xl border border-[#d9e5ec] bg-white px-3 py-2 text-xs text-[#123047]">
+                                      ถ่ายรูปใหม่
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        onChange={(event) =>
+                                          setDailyPatientCardFiles((prev) =>
+                                            prev.map((item, itemIndex) =>
+                                              itemIndex === index ? event.target.files : item,
+                                            ),
+                                          )
+                                        }
+                                        className="mt-2 w-full text-sm outline-none"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="mt-1 text-xs text-[#6f8190]">
+                                    {files?.length ? "เลือกรูปแล้ว" : "ยังไม่ได้เลือกรูป"}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setDailyPatientCardFiles((prev) => [...prev, null])}
+                              className="mt-3 rounded-xl border border-[#12304733] bg-white px-3 py-2 text-xs font-medium text-[#123047]"
+                            >
+                              เพิ่มรูป
+                            </button>
+                          </div>
+                          <div className="rounded-2xl border border-dashed border-[#c9d9e3] bg-[#f7fbfd] px-4 py-3 text-sm">
+                            <div className="text-xs uppercase tracking-[0.22em] text-[#6f8190]">
+                              เพิ่ม{getPhotoCategoryLabel("follow-up")}
+                            </div>
+                            <div className="mt-3 space-y-3">
+                              {dailyFollowUpFiles.map((files, index) => (
+                                <div key={`${dailyFollowUpFileInputKey}-${index}`}>
+                                  <div className="mb-1 text-xs text-[#5f7486]">
+                                    รูปที่ {index + 1}
+                                  </div>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    <label className="rounded-xl border border-[#d9e5ec] bg-white px-3 py-2 text-xs text-[#123047]">
+                                      เลือกรูปจากเครื่อง
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(event) =>
+                                          setDailyFollowUpFiles((prev) =>
+                                            prev.map((item, itemIndex) =>
+                                              itemIndex === index ? event.target.files : item,
+                                            ),
+                                          )
+                                        }
+                                        className="mt-2 w-full text-sm outline-none"
+                                      />
+                                    </label>
+                                    <label className="rounded-xl border border-[#d9e5ec] bg-white px-3 py-2 text-xs text-[#123047]">
+                                      ถ่ายรูปใหม่
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        onChange={(event) =>
+                                          setDailyFollowUpFiles((prev) =>
+                                            prev.map((item, itemIndex) =>
+                                              itemIndex === index ? event.target.files : item,
+                                            ),
+                                          )
+                                        }
+                                        className="mt-2 w-full text-sm outline-none"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="mt-1 text-xs text-[#6f8190]">
+                                    {files?.length ? "เลือกรูปแล้ว" : "ยังไม่ได้เลือกรูป"}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setDailyFollowUpFiles((prev) => [...prev, null])}
+                              className="mt-3 rounded-xl border border-[#12304733] bg-white px-3 py-2 text-xs font-medium text-[#123047]"
+                            >
+                              เพิ่มรูป
+                            </button>
+                          </div>
+                        </div>
                         {renderClinicalAssessmentForm(
                           dailyVisitClinical,
                           setDailyVisitClinical,
@@ -2985,6 +3212,16 @@ export function PalliativeWorkspace({
                         <div className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]">
                           <div className="text-xs text-[#6f8190]">หมายเหตุ</div>
                           {visit.note || "-"}
+                        </div>
+                        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047]">
+                          <div className="text-xs text-[#6f8190]">รูปภาพ</div>
+                          {visit.photos.length} รูป
+                        </div>
+                        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-[#123047] md:col-span-2">
+                          <div className="text-xs text-[#6f8190]">Checklist</div>
+                          {missingChecklistLabels.length
+                            ? `ยังขาด ${missingChecklistLabels.join(", ")}`
+                            : "ครบทุกข้อ"}
                         </div>
                         <div className="md:col-span-3">
                           <VisitClinicalSummary clinical={visit.clinical} />
