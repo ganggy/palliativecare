@@ -285,6 +285,13 @@ function splitVisitPhotos(photos: PalliativeVisit["photos"]) {
   };
 }
 
+function visitPhotoUrl(url: string) {
+  if (url.startsWith("/uploads/")) {
+    return `/api/uploads/${url.slice("/uploads/".length)}`;
+  }
+  return url;
+}
+
 function createDefaultClinicalAssessment(): VisitClinicalAssessment {
   return {
     temperatureCelsius: "",
@@ -2370,23 +2377,6 @@ export function PalliativeWorkspace({
       setNotice("กรุณาระบุวันที่เยี่ยม");
       return;
     }
-    if (!visitDraft.authenCode.trim()) {
-      setNotice("กรุณากรอก Authen code");
-      return;
-    }
-    if (!visitDraft.symptoms.trim()) {
-      setNotice("กรุณาบันทึกอาการติดตาม");
-      return;
-    }
-    if (!patientCardFiles.some((files) => files?.length)) {
-      setNotice("กรุณาแนบรูปบัตรคู่กับคนไข้");
-      return;
-    }
-    if (!followUpFiles.some((files) => files?.length)) {
-      setNotice("กรุณาแนบรูปติดตามอาการคนไข้");
-      return;
-    }
-
     const cardPhotos = await fileGroupsToPayloadWithCaption(
       patientCardFiles,
       "patient-card",
@@ -2398,7 +2388,6 @@ export function PalliativeWorkspace({
     const photos = [...cardPhotos, ...followUpPhotos];
     const normalizedChecklist: VisitChecklist = {
       ...visitChecklist,
-      symptomAssessment: true,
       photoCaptured: photos.length > 0,
     };
 
@@ -2469,14 +2458,6 @@ export function PalliativeWorkspace({
     if (!editingVisitId || !currentUser) return;
     if (!dailyVisitDraft.visitDate) {
       setNotice("กรุณาระบุวันที่เยี่ยม");
-      return;
-    }
-    if (!dailyVisitDraft.authenCode.trim()) {
-      setNotice("กรุณากรอก Authen code");
-      return;
-    }
-    if (!dailyVisitDraft.symptoms.trim()) {
-      setNotice("กรุณาบันทึกอาการติดตาม");
       return;
     }
     const visit = snapshot.visits.find((item) => item.id === editingVisitId);
@@ -2892,17 +2873,18 @@ export function PalliativeWorkspace({
                           <div className="flex flex-wrap gap-3">
                             {row.photos.map((photo) => (
                               <a
-                                key={photo.id}
-                                href={photo.url}
+                                key={photo.id || photo.url}
+                                href={visitPhotoUrl(photo.url)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="block"
                               >
                                 <Image
-                                  src={photo.url}
+                                  src={visitPhotoUrl(photo.url)}
                                   alt={photo.fileName}
                                   width={120}
                                   height={120}
+                                  unoptimized
                                   className="h-24 w-24 rounded-2xl border border-[#d9e5ec] object-cover"
                                 />
                               </a>
@@ -5683,15 +5665,21 @@ export function PalliativeWorkspace({
                                 <div className="mt-3 flex flex-wrap gap-3">
                                   {patientCardPhotos.length ? (
                                     patientCardPhotos.map((photo) => (
-                                      <Image
-                                        key={photo.id}
-                                        src={photo.url}
-                                        alt={photo.fileName}
-                                        width={80}
-                                        height={80}
-                                        unoptimized
-                                        className="h-20 w-20 rounded-2xl object-cover"
-                                      />
+                                      <a
+                                        key={photo.id || photo.url}
+                                        href={visitPhotoUrl(photo.url)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <Image
+                                          src={visitPhotoUrl(photo.url)}
+                                          alt={photo.fileName}
+                                          width={80}
+                                          height={80}
+                                          unoptimized
+                                          className="h-20 w-20 rounded-2xl object-cover"
+                                        />
+                                      </a>
                                     ))
                                   ) : (
                                     <div className="text-sm text-[#6f8190]">
@@ -5707,15 +5695,21 @@ export function PalliativeWorkspace({
                                 <div className="mt-3 flex flex-wrap gap-3">
                                   {followUpPhotos.length ? (
                                     followUpPhotos.map((photo) => (
-                                      <Image
-                                        key={photo.id}
-                                        src={photo.url}
-                                        alt={photo.fileName}
-                                        width={80}
-                                        height={80}
-                                        unoptimized
-                                        className="h-20 w-20 rounded-2xl object-cover"
-                                      />
+                                      <a
+                                        key={photo.id || photo.url}
+                                        href={visitPhotoUrl(photo.url)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <Image
+                                          src={visitPhotoUrl(photo.url)}
+                                          alt={photo.fileName}
+                                          width={80}
+                                          height={80}
+                                          unoptimized
+                                          className="h-20 w-20 rounded-2xl object-cover"
+                                        />
+                                      </a>
                                     ))
                                   ) : (
                                     <div className="text-sm text-[#6f8190]">

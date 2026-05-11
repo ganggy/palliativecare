@@ -105,7 +105,7 @@ export async function persistVisitPhoto(
   const absoluteDir = path.join(process.cwd(), "public", relativeDir);
   await mkdir(absoluteDir, { recursive: true });
   await writeFile(path.join(absoluteDir, safeName), buffer);
-  return `/${relativeDir.replaceAll("\\", "/")}/${safeName}`;
+  return `/api/${relativeDir.replaceAll("\\", "/")}/${safeName}`;
 }
 
 export async function persistAdvanceCarePlanPdf(

@@ -347,18 +347,6 @@ export function validateVisitSubmission(input: {
   if (!input.visitDate?.trim()) {
     throw new Error("กรุณาระบุวันที่เยี่ยมก่อนบันทึก");
   }
-
-  if (!input.authenCode?.trim()) {
-    throw new Error("กรุณากรอก Authen code ทุกครั้งก่อนบันทึกการเยี่ยม");
-  }
-
-  if (!input.symptoms?.trim()) {
-    throw new Error("กรุณาบันทึกอาการติดตามก่อนบันทึกการเยี่ยม");
-  }
-
-  if (input.photosCount < 1) {
-    throw new Error("กรุณาแนบภาพผู้ป่วยอย่างน้อย 1 รูปทุกครั้งที่ออกเยี่ยม");
-  }
 }
 
 export function formatRoleLabel(role: UserRole): string {
