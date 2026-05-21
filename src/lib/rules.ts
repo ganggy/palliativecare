@@ -302,6 +302,10 @@ export function endOfMonth(value: string): string {
   return toDateKey(last);
 }
 
+function parseDateKey(value: string): number {
+  return new Date(`${value}T00:00:00`).getTime();
+}
+
 export function buildVisitWindow(anchorDate: string): VisitWindow {
   return {
     startDate: startOfMonth(anchorDate),
@@ -311,6 +315,18 @@ export function buildVisitWindow(anchorDate: string): VisitWindow {
 
 export function isDateWithinWindow(date: string, window: VisitWindow): boolean {
   return date >= window.startDate && date <= window.endDate;
+}
+
+export function isVisitDateAtLeastDaysAfter(
+  referenceDate: string | undefined,
+  visitDate: string,
+  minDays = 30,
+): boolean {
+  if (!referenceDate?.trim()) return true;
+  return (
+    parseDateKey(visitDate) - parseDateKey(referenceDate) >=
+    minDays * 24 * 60 * 60 * 1000
+  );
 }
 
 export function defaultVisitChecklist(): VisitChecklist {

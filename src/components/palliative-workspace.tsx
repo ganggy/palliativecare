@@ -5235,7 +5235,7 @@ export function PalliativeWorkspace({
                     />
                   </div>
                   <div className="rounded-[1.4rem] border border-[#e2edf4] bg-[#f7fbfd] p-4 text-sm text-[#5f7486]">
-                    ช่วงที่อนุญาตให้เลื่อนนัด:{" "}
+                    วันนัดเดิมของรอบก่อน:{" "}
                     {formatDate(selectedPatient.visitWindow.startDate)} -{" "}
                     {formatDate(selectedPatient.visitWindow.endDate)}
                   </div>
@@ -5393,9 +5393,9 @@ export function PalliativeWorkspace({
                       </div>
                     </div>
                     <div className="mb-4 rounded-[1.3rem] border border-[#0f766e22] bg-[#ebfaf6] p-4 text-sm leading-7 text-[#0b4d47]">
-                      ก่อนบันทึกการเยี่ยม ต้องมีวันที่เยี่ยม, Authen code,
-                      อาการติดตาม, รูปบัตรคู่กับคนไข้ และรูปติดตามอาการอย่างน้อย
-                      1 รูป
+                      ก่อนบันทึกการเยี่ยม ต้องมีวันที่เยี่ยมที่ห่างจาก visit
+                      ครั้งก่อนอย่างน้อย 30 วัน, Authen code, อาการติดตาม,
+                      รูปบัตรคู่กับคนไข้ และรูปติดตามอาการอย่างน้อย 1 รูป
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <input

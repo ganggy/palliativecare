@@ -35,7 +35,7 @@ import {
   defaultVisitChecklist,
   describeEligibility,
   isRegistryExcludedPatient,
-  isDateWithinWindow,
+  isVisitDateAtLeastDaysAfter,
   isOpioidEligibleCode,
   monthKey,
   normalizeVisitChecklist,
@@ -2522,6 +2522,7 @@ export async function saveVisit(
     `
       SELECT
         service_month_count AS serviceMonthCount,
+        last_visit_at AS lastVisitAt,
         next_visit_at AS nextVisitAt,
         visit_window_start AS visitWindowStart,
         visit_window_end AS visitWindowEnd,
@@ -2535,6 +2536,7 @@ export async function saveVisit(
   const patient = (
     rows as Array<{
       serviceMonthCount: number;
+      lastVisitAt?: string | null;
       nextVisitAt?: string | null;
       visitWindowStart?: string | null;
       visitWindowEnd?: string | null;
@@ -2542,17 +2544,8 @@ export async function saveVisit(
     }>
   )[0];
   if (!patient) throw new Error("Patient not found");
-  if (
-    patient.visitWindowStart &&
-    patient.visitWindowEnd &&
-    !isDateWithinWindow(input.visitDate, {
-      startDate: patient.visitWindowStart,
-      endDate: patient.visitWindowEnd,
-    })
-  ) {
-    throw new Error(
-      `วันเยี่ยมต้องอยู่ระหว่าง ${patient.visitWindowStart} ถึง ${patient.visitWindowEnd}`,
-    );
+  if (!isVisitDateAtLeastDaysAfter(patient.lastVisitAt ?? undefined, input.visitDate)) {
+    throw new Error("วันเยี่ยมต้องห่างจากครั้งก่อนอย่างน้อย 30 วัน");
   }
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
@@ -2663,12 +2656,32 @@ export async function updateVisit(
     symptoms: input.symptoms,
     photosCount: photos.length,
   });
+  const patient = snapshot.patients.find(
+    (item) => item.id === currentVisit.patientId,
+  );
+  if (!patient) throw new Error("Patient not found");
+  const pool = getPool("palliative");
+  const [previousRows] = await pool.query(
+    `
+      SELECT MAX(visit_date) AS previousVisitAt
+      FROM palliative_visits
+      WHERE patient_id = ? AND id <> ?
+    `,
+    [currentVisit.patientId, visitId],
+  );
+  const previousVisitAt = (
+    previousRows as Array<{ previousVisitAt?: string | null }>
+  )[0]?.previousVisitAt;
+  if (
+    !isVisitDateAtLeastDaysAfter(previousVisitAt ?? undefined, input.visitDate)
+  ) {
+    throw new Error("วันเยี่ยมต้องห่างจากครั้งก่อนอย่างน้อย 30 วัน");
+  }
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
     hasPhoto: photos.length > 0,
     hasSymptoms: Boolean(input.symptoms.trim()),
   });
-  const pool = getPool("palliative");
   await ensureVisitClinicalSchema();
   await pool.query(
     `
