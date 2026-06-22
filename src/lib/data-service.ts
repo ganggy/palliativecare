@@ -2447,14 +2447,6 @@ export async function savePatientPatch(
       current?.nextVisitAt && current.startDate && current.endDate
         ? { startDate: current.startDate, endDate: current.endDate }
         : buildVisitWindow(patch.nextVisitAt);
-    if (
-      patch.nextVisitAt < window.startDate ||
-      patch.nextVisitAt > window.endDate
-    ) {
-      throw new Error(
-        `วันเยี่ยมต้องอยู่ระหว่าง ${window.startDate} ถึง ${window.endDate}`,
-      );
-    }
   }
   await pool.query(
     `

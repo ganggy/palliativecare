@@ -4,7 +4,6 @@ import {
   buildClaimChecklist,
   buildVisitWindow,
   describeEligibility,
-  isDateWithinWindow,
   isVisitDateAtLeastDaysAfter,
   monthKey,
   normalizeVisitChecklist,
@@ -1146,11 +1145,6 @@ export function updatePatientRecord(
     const window = patient.nextVisitAt
       ? patient.visitWindow
       : buildVisitWindow(patch.nextVisitAt);
-    if (!isDateWithinWindow(patch.nextVisitAt, window)) {
-      throw new Error(
-        `วันเยี่ยมต้องอยู่ระหว่าง ${window.startDate} ถึง ${window.endDate}`,
-      );
-    }
     patient.nextVisitAt = patch.nextVisitAt;
     patient.visitWindow = window;
   }
