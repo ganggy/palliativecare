@@ -2710,7 +2710,6 @@ export async function updateVisit(
   const hasPhoto = patientVisits.some(
     (visit) => parseJson<Array<unknown>>(visit.photosJson, []).length > 0,
   );
-  const patient = snapshot.patients.find((item) => item.id === currentVisit.patientId);
   const checklistState = buildClaimChecklist({
     ...(patient?.claimChecklist ?? buildClaimChecklist({})),
     hasAuthentication,

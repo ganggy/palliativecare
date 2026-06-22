@@ -1293,8 +1293,6 @@ export function updateVisitRecord(
     hasSymptoms: Boolean(input.symptoms.trim()),
   });
   visit.clinical = input.clinical;
-
-  const patient = patients.find((item) => item.id === visit.patientId);
   if (patient) refreshPatientMetrics(patient);
   return clone(visit);
 }
