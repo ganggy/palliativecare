@@ -35,7 +35,6 @@ import {
   defaultVisitChecklist,
   describeEligibility,
   isRegistryExcludedPatient,
-  isVisitDateAtLeastDaysAfter,
   isOpioidEligibleCode,
   monthKey,
   normalizeVisitChecklist,
@@ -2661,11 +2660,6 @@ export async function updateVisit(
   const previousVisitAt = (
     previousRows as Array<{ previousVisitAt?: string | null }>
   )[0]?.previousVisitAt;
-  if (
-    !isVisitDateAtLeastDaysAfter(previousVisitAt ?? undefined, input.visitDate)
-  ) {
-    throw new Error("วันเยี่ยมต้องห่างจากครั้งก่อนอย่างน้อย 30 วัน");
-  }
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
     hasPhoto: photos.length > 0,

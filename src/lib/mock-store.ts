@@ -4,7 +4,6 @@ import {
   buildClaimChecklist,
   buildVisitWindow,
   describeEligibility,
-  isVisitDateAtLeastDaysAfter,
   monthKey,
   normalizeVisitChecklist,
   toDateKey,
@@ -1195,11 +1194,6 @@ export function addVisitRecord(
     symptoms: input.symptoms,
     photosCount: input.photos.length,
   });
-  if (
-    !isVisitDateAtLeastDaysAfter(patient.lastVisitAt, input.visitDate)
-  ) {
-    throw new Error("วันเยี่ยมต้องห่างจากครั้งก่อนอย่างน้อย 30 วัน");
-  }
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
     hasPhoto: input.photos.length > 0,
@@ -1288,14 +1282,6 @@ export function updateVisitRecord(
     symptoms: input.symptoms,
     photosCount: nextPhotos.length,
   });
-  const previousVisits = visits
-    .filter((item) => item.patientId === visit.patientId && item.id !== visit.id)
-    .sort((a, b) => b.visitDate.localeCompare(a.visitDate) || b.id - a.id);
-  if (
-    !isVisitDateAtLeastDaysAfter(previousVisits[0]?.visitDate, input.visitDate)
-  ) {
-    throw new Error("วันเยี่ยมต้องห่างจากครั้งก่อนอย่างน้อย 30 วัน");
-  }
 
   visit.visitDate = input.visitDate;
   visit.authenCode = input.authenCode?.trim();
