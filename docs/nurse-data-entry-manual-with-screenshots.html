@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<title>คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</title>
+<style>
+@page { size: A4; margin: 14mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #123047; font-family: "Leelawadee UI", Tahoma, sans-serif; background: #eef6f8; line-height: 1.58; }
+.page { page-break-after: always; min-height: 269mm; padding: 0; }
+.cover { display: grid; align-content: center; min-height: 269mm; border-radius: 28px; padding: 34mm 22mm; background: radial-gradient(circle at 15% 10%, rgba(107,226,211,.26), transparent 34%), linear-gradient(135deg, #123047, #0f766e 58%, #d9c98c); color: white; }
+.badge { display: inline-block; width: fit-content; border: 1px solid rgba(255,255,255,.32); border-radius: 999px; padding: 6px 14px; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; }
+h1 { margin: 18px 0 8px; font-size: 36px; line-height: 1.2; }
+h2 { margin: 0 0 8px; font-size: 23px; color: #123047; }
+h3 { margin: 0 0 8px; font-size: 16px; color: #0f766e; }
+p { margin: 0 0 10px; }
+.card { background: rgba(255,255,255,.94); border: 1px solid #dbe8ef; border-radius: 24px; padding: 18px; box-shadow: 0 18px 48px rgba(8,33,51,.08); }
+.step { margin-bottom: 16px; }
+.step-img { width: 100%; border: 1px solid #dbe8ef; border-radius: 18px; box-shadow: 0 12px 35px rgba(8,33,51,.12); margin: 10px 0 12px; }
+ul { margin: 8px 0 0 21px; padding: 0; }
+li { margin: 5px 0; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.check { border-left: 5px solid #0f766e; background: #f7fbfd; }
+.small { color: #607385; font-size: 12px; }
+.footer { margin-top: 10px; color: #6f8190; font-size: 11px; text-align: right; }
+.table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.table th { background: #eaf5f5; color: #123047; text-align: left; }
+.table th, .table td { border: 1px solid #dbe8ef; padding: 8px; vertical-align: top; }
+.code { white-space: pre-wrap; background: #102f45; color: #e8fff9; padding: 14px; border-radius: 16px; font-family: Consolas, monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+<section class="page cover">
+  <div class="badge">Nurse Data Entry Manual</div>
+  <h1>คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</h1>
+  <p style="font-size:18px;max-width:720px">ระบบ Palliative Home Visit พร้อมภาพหน้าจอตามขั้นตอน เพื่อให้บันทึกข้อมูลถูกต้อง ครบถ้วน ตรวจย้อนหลังได้ และพร้อมใช้ต่อในงานบริหาร ห้องบัตร และการเบิกจ่าย</p>
+  <p class="small" style="color:rgba(255,255,255,.75);margin-top:28px">จัดทำจากหน้าจอระบบจริง วันที่ 18 พฤษภาคม 2569</p>
+</section>
+
+<section class="page"><div class="card"><h2>ภาพรวมการทำงานของพยาบาล</h2><p>ลำดับการทำงานที่แนะนำคือ ค้นหา/ยืนยันคนไข้ → ตรวจทะเบียน → บันทึกเยี่ยมบ้าน → แนบรูป → ทำ ACP/LW ถ้ามี → ตรวจภาพรวมก่อนจบวัน</p><div class="grid">
+<div class="card check"><h3>ก่อนบันทึก</h3><ul>
+<li>เลือกคนไข้ถูกคนด้วย HN/CID</li>
+<li>วันที่เยี่ยมเป็นวันที่ไปเยี่ยมจริง</li>
+<li>มี Authen code ถ้ามีในวันนั้น</li>
+<li>บันทึกอาการติดตามและหมายเหตุอ่านเข้าใจ</li>
+</ul></div>
+<div class="card check"><h3>ข้อมูลคลินิก</h3><ul>
+<li>T/P/RR/BP ถูกต้อง</li>
+<li>PPS สอดคล้องกับสภาพจริง</li>
+<li>ระบุ ESAS/CC และอาการรบกวน</li>
+<li>ประเมิน pain score และการจัดการปวด</li>
+</ul></div>
+<div class="card check"><h3>รูปภาพ</h3><ul>
+<li>มีรูปบัตรคู่กับคนไข้เมื่อจำเป็น</li>
+<li>มีรูปติดตามอาการหรือแผล</li>
+<li>เพิ่มรูปที่ 2/3 ได้หากต้องใช้</li>
+<li>เปิดรูปดูได้หลังบันทึก</li>
+</ul></div>
+<div class="card check"><h3>หลังบันทึก</h3><ul>
+<li>มีข้อความบันทึกสำเร็จ</li>
+<li>visit ปรากฏในประวัติ</li>
+<li>Checklist ครบตามที่ทำจริง</li>
+<li>ACP/LW มี PDF หากทำเอกสาร</li>
+</ul></div>
+</div><h3 style="margin-top:18px">มาตรฐานข้อความบันทึกที่แนะนำ</h3><div class="code">อาการวันนี้: ...
+ประเมิน: T ... P ... RR ... BP ... PPS ... Pain ...
+การดูแลที่ทำ: ...
+คำแนะนำแก่ญาติ/ผู้ดูแล: ...
+แผนติดตาม: ...</div></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>1. เข้าหน้างานพยาบาลหน่วย</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/01-nurse-dashboard.png" />
+<ul>
+<li>ตรวจชื่อผู้ใช้งานและหน่วยบริการมุมขวาบนให้ตรงกับหน่วยของตนเอง</li>
+<li>ดูตัวเลขภาพรวมก่อนเริ่มงาน เช่น คนไข้คงเหลือ ถึงกำหนดวันนี้ เยี่ยมเดือนนี้ และปีงบประมาณ</li>
+<li>ใช้แถบเมนู ค้นหา/ยืนยัน, ทะเบียน, เยี่ยมบ้าน, ACP/LW และภาพรวม ตามลำดับการทำงาน</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>2. ค้นหาและยืนยันคนไข้</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/02-search-confirm-patient.png" />
+<ul>
+<li>ค้นหาด้วย HN, CID, ชื่อ หรือรหัสโรค</li>
+<li>ตรวจชื่อ-สกุล, HN, CID และหน่วยตามที่อยู่ก่อนกดยืนยัน</li>
+<li>หากชื่อคล้ายกันให้ใช้ HN/CID เป็นหลัก ห้ามบันทึกหากยังไม่มั่นใจว่าเป็นคนไข้รายเดียวกัน</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>3. ตรวจทะเบียนและเลือกเคส</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/03-registry-select-patient.png" />
+<ul>
+<li>ใช้แท็บทะเบียนเพื่อตรวจสถานะ นัดถัดไป รอบ/เดือนการเยี่ยม และประวัติ visit</li>
+<li>เลือกคนไข้ที่กำลังติดตามสำหรับงานประจำ และเลือกครบเงื่อนไขเมื่อต้องตรวจเคสที่ทำครบแล้ว</li>
+<li>ใช้ช่องค้นหาเมื่อต้องการหาเคสด้วย HN/CID/ชื่อ/Dx อย่างรวดเร็ว</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>4. บันทึกข้อมูลผู้ป่วยและเริ่ม visit</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/04-visit-form-top.png" />
+<ul>
+<li>ตรวจรายละเอียดผู้ป่วย เบอร์โทร ญาติ LINE ID และวันนัดถัดไป</li>
+<li>ในฝั่งบันทึกเยี่ยมบ้านให้กรอกวันที่เยี่ยมจริง Authen code อาการติดตาม และหมายเหตุ</li>
+<li>ถ้าบันทึกย้อนหลัง ให้ใช้วันที่ไปเยี่ยมจริง ไม่ใช่วันที่กรอกข้อมูล</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>5. กรอกประเมินทางคลินิก</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/05-clinical-assessment.png" />
+<ul>
+<li>กรอก T, P, RR, BP, PPS, pain score, ESAS/CC และอาการรบกวนตามข้อมูลจริง</li>
+<li>เลือกการใช้ออกซิเจน การจัดการความปวด และผลข้างเคียงจาก Morphine ถ้ามี</li>
+<li>หาก PPS หรืออาการเปลี่ยนแปลงมากจากครั้งก่อน ให้ระบุรายละเอียดในหมายเหตุ</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>6. แนบรูปภาพประกอบ visit</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/06-photo-upload.png" />
+<ul>
+<li>แนบรูปบัตรคู่กับคนไข้สำหรับยืนยันตัวตนและงานห้องบัตร</li>
+<li>แนบรูปติดตามอาการ เช่น สภาพผู้ป่วย แผล อุปกรณ์ หรือสภาพแวดล้อมที่เกี่ยวข้อง</li>
+<li>สามารถเพิ่มรูปมากกว่า 1 รูปได้ ตรวจว่ารูปเปิดดูได้หลังบันทึก</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>7. บันทึก ACP/Living Will และสร้าง PDF</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/07-acp-lw-form.png" />
+<ul>
+<li>เลือก visit ที่ต้องการผูกเอกสาร ACP/LW</li>
+<li>ตรวจข้อมูลส่วนบุคคล วันเกิด สิทธิการรักษา สถานพยาบาลประจำ และผู้ร่วมวางแผน</li>
+<li>ให้ผู้ป่วย/ผู้แทน/พยาน/บุคลากรเซ็นในระบบ แล้วกดสร้าง PDF และตรวจว่าดาวน์โหลดได้</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card step">
+<h2>8. ตรวจภาพรวมก่อนจบวัน</h2>
+<img class="step-img" src="file:///D:/palliativecare/docs/nurse-guide-assets/08-unit-progress.png" />
+<ul>
+<li>ตรวจจำนวน visit วันนี้ เดือนนี้ และปีงบประมาณของหน่วย</li>
+<li>ดูทะเบียนหน่วยตัวเองและสถานะความพร้อมเบิก</li>
+<li>ก่อนออกจากระบบให้ตรวจว่าทุก visit วันนี้บันทึกครบ รูปครบ และข้อมูลสำคัญไม่ตกหล่น</li>
+</ul></div><div class="footer">คู่มือการบันทึกข้อมูลสำหรับพยาบาลหน่วย</div></section>
+<section class="page"><div class="card"><h2>ข้อผิดพลาดที่พบบ่อยและวิธีป้องกัน</h2><table class="table"><thead><tr><th>ปัญหา</th><th>วิธีป้องกัน</th></tr></thead><tbody>
+<tr><td>เลือกคนไข้ผิดคน</td><td>ตรวจ HN และ CID ก่อนกด ยืนยัน</td></tr>
+<tr><td>วันที่เยี่ยมผิด</td><td>ใช้วันที่ไปเยี่ยมจริง ไม่ใช้วันที่กรอกย้อนหลัง</td></tr>
+<tr><td>ไม่มีรูปแนบ</td><td>ตรวจรูปก่อนกดบันทึก และดูจำนวนรูปหลังบันทึก</td></tr>
+<tr><td>บันทึกอาการสั้นเกินไป</td><td>เขียนอาการสำคัญ ผลการประเมิน และคำแนะนำที่ให้ญาติ</td></tr>
+<tr><td>PPS ไม่สอดคล้องกับอาการ</td><td>เลือกคะแนนตามสภาพจริง และใส่หมายเหตุหากเปลี่ยนมาก</td></tr>
+<tr><td>ACP/LW ไม่มีลายเซ็น</td><td>ให้เซ็นในระบบก่อนสร้าง PDF และตรวจว่าดาวน์โหลดไฟล์ได้</td></tr>
+</tbody></table><h3 style="margin-top:18px">Checklist ก่อนออกจากระบบ</h3><ul><li>ทุก visit วันนี้ถูกบันทึกครบ</li><li>รูปภาพแนบครบและเปิดดูได้</li><li>Authen code ที่มีถูกกรอกแล้ว</li><li>ACP/LW ที่ทำวันนี้มี PDF และดาวน์โหลดได้</li><li>แจ้ง Case Manager หากพบคนไข้ผิดหน่วย เสียชีวิต ย้ายพื้นที่ หรือไม่เข้าเกณฑ์</li></ul></div></section>
+</body></html>

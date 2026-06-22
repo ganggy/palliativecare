@@ -4,7 +4,6 @@ import {
   buildClaimChecklist,
   buildVisitWindow,
   describeEligibility,
-  isDateWithinWindow,
   monthKey,
   normalizeVisitChecklist,
   toDateKey,
@@ -1145,11 +1144,6 @@ export function updatePatientRecord(
     const window = patient.nextVisitAt
       ? patient.visitWindow
       : buildVisitWindow(patch.nextVisitAt);
-    if (!isDateWithinWindow(patch.nextVisitAt, window)) {
-      throw new Error(
-        `วันเยี่ยมต้องอยู่ระหว่าง ${window.startDate} ถึง ${window.endDate}`,
-      );
-    }
     patient.nextVisitAt = patch.nextVisitAt;
     patient.visitWindow = window;
   }
@@ -1200,11 +1194,6 @@ export function addVisitRecord(
     symptoms: input.symptoms,
     photosCount: input.photos.length,
   });
-  if (!isDateWithinWindow(input.visitDate, patient.visitWindow)) {
-    throw new Error(
-      `วันเยี่ยมต้องอยู่ระหว่าง ${patient.visitWindow.startDate} ถึง ${patient.visitWindow.endDate}`,
-    );
-  }
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
     hasPhoto: input.photos.length > 0,
@@ -1264,6 +1253,7 @@ export function updateVisitRecord(
     note: string;
     checklist: VisitChecklist;
     clinical?: VisitClinicalAssessment;
+    photos?: Array<{ url: string; fileName: string; caption?: string }>;
   },
 ) {
   const actor = users.find((item) => item.id === input.actorUserId);
@@ -1274,25 +1264,35 @@ export function updateVisitRecord(
   if (!canEditAll && actor.unitId !== visit.unitId) {
     throw new Error("แก้ไขได้เฉพาะข้อมูลของหน่วยตัวเอง");
   }
+  const patient = patients.find((item) => item.id === visit.patientId);
+  if (!patient) throw new Error("Patient not found");
+  const addedPhotos = buildStoredPhotos(
+    visit.patientId,
+    visit.id,
+    input.photos ?? [],
+  ).map((photo, index) => ({
+    ...photo,
+    id: `photo-${visit.id}-${visit.photos.length + index + 1}`,
+  }));
+  const nextPhotos = [...visit.photos, ...addedPhotos];
 
   validateVisitSubmission({
     visitDate: input.visitDate,
     authenCode: input.authenCode,
     symptoms: input.symptoms,
-    photosCount: visit.photos.length,
+    photosCount: nextPhotos.length,
   });
 
   visit.visitDate = input.visitDate;
   visit.authenCode = input.authenCode?.trim();
   visit.symptoms = input.symptoms.trim();
   visit.note = input.note.trim();
+  visit.photos = nextPhotos;
   visit.checklist = normalizeVisitChecklist(input.checklist, {
-    hasPhoto: visit.photos.length > 0,
+    hasPhoto: nextPhotos.length > 0,
     hasSymptoms: Boolean(input.symptoms.trim()),
   });
   visit.clinical = input.clinical;
-
-  const patient = patients.find((item) => item.id === visit.patientId);
   if (patient) refreshPatientMetrics(patient);
   return clone(visit);
 }

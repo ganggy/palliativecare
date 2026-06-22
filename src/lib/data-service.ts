@@ -35,7 +35,6 @@ import {
   defaultVisitChecklist,
   describeEligibility,
   isRegistryExcludedPatient,
-  isDateWithinWindow,
   isOpioidEligibleCode,
   monthKey,
   normalizeVisitChecklist,
@@ -2447,14 +2446,6 @@ export async function savePatientPatch(
       current?.nextVisitAt && current.startDate && current.endDate
         ? { startDate: current.startDate, endDate: current.endDate }
         : buildVisitWindow(patch.nextVisitAt);
-    if (
-      patch.nextVisitAt < window.startDate ||
-      patch.nextVisitAt > window.endDate
-    ) {
-      throw new Error(
-        `วันเยี่ยมต้องอยู่ระหว่าง ${window.startDate} ถึง ${window.endDate}`,
-      );
-    }
   }
   await pool.query(
     `
@@ -2522,6 +2513,7 @@ export async function saveVisit(
     `
       SELECT
         service_month_count AS serviceMonthCount,
+        last_visit_at AS lastVisitAt,
         next_visit_at AS nextVisitAt,
         visit_window_start AS visitWindowStart,
         visit_window_end AS visitWindowEnd,
@@ -2535,6 +2527,7 @@ export async function saveVisit(
   const patient = (
     rows as Array<{
       serviceMonthCount: number;
+      lastVisitAt?: string | null;
       nextVisitAt?: string | null;
       visitWindowStart?: string | null;
       visitWindowEnd?: string | null;
@@ -2542,18 +2535,6 @@ export async function saveVisit(
     }>
   )[0];
   if (!patient) throw new Error("Patient not found");
-  if (
-    patient.visitWindowStart &&
-    patient.visitWindowEnd &&
-    !isDateWithinWindow(input.visitDate, {
-      startDate: patient.visitWindowStart,
-      endDate: patient.visitWindowEnd,
-    })
-  ) {
-    throw new Error(
-      `วันเยี่ยมต้องอยู่ระหว่าง ${patient.visitWindowStart} ถึง ${patient.visitWindowEnd}`,
-    );
-  }
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
     hasPhoto: input.photos.length > 0,
@@ -2631,6 +2612,7 @@ export async function updateVisit(
     note: string;
     checklist: VisitChecklist;
     clinical?: VisitClinicalAssessment;
+    photos?: Array<{ url: string; fileName: string; caption?: string }>;
   },
 ) {
   if (!isDbConfigured("palliative")) {
@@ -2646,19 +2628,43 @@ export async function updateVisit(
   if (!canEditAll && actor.unitId !== currentVisit.unitId) {
     throw new Error("แก้ไขได้เฉพาะข้อมูลของหน่วยตัวเอง");
   }
+  const addedPhotos = (input.photos ?? []).map((photo, index) => ({
+    id: `photo-${visitId}-${currentVisit.photos.length + index + 1}`,
+    visitId,
+    fileName: photo.fileName,
+    url: photo.url,
+    caption: photo.caption,
+    capturedAt: new Date().toISOString(),
+  }));
+  const photos = [...currentVisit.photos, ...addedPhotos];
 
   validateVisitSubmission({
     visitDate: input.visitDate,
     authenCode: input.authenCode,
     symptoms: input.symptoms,
-    photosCount: currentVisit.photos.length,
+    photosCount: photos.length,
   });
+  const patient = snapshot.patients.find(
+    (item) => item.id === currentVisit.patientId,
+  );
+  if (!patient) throw new Error("Patient not found");
+  const pool = getPool("palliative");
+  const [previousRows] = await pool.query(
+    `
+      SELECT MAX(visit_date) AS previousVisitAt
+      FROM palliative_visits
+      WHERE patient_id = ? AND id <> ?
+    `,
+    [currentVisit.patientId, visitId],
+  );
+  const previousVisitAt = (
+    previousRows as Array<{ previousVisitAt?: string | null }>
+  )[0]?.previousVisitAt;
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
-    hasPhoto: currentVisit.photos.length > 0,
+    hasPhoto: photos.length > 0,
     hasSymptoms: Boolean(input.symptoms.trim()),
   });
-  const pool = getPool("palliative");
   await ensureVisitClinicalSchema();
   await pool.query(
     `
@@ -2668,7 +2674,8 @@ export async function updateVisit(
           symptoms = ?,
           note = ?,
           checklist_json = ?,
-          clinical_json = ?
+          clinical_json = ?,
+          photos_json = ?
       WHERE id = ?
     `,
     [
@@ -2678,6 +2685,7 @@ export async function updateVisit(
       input.note.trim(),
       JSON.stringify(normalizedChecklist),
       JSON.stringify(input.clinical ?? null),
+      JSON.stringify(photos),
       visitId,
     ],
   );
@@ -2702,7 +2710,6 @@ export async function updateVisit(
   const hasPhoto = patientVisits.some(
     (visit) => parseJson<Array<unknown>>(visit.photosJson, []).length > 0,
   );
-  const patient = snapshot.patients.find((item) => item.id === currentVisit.patientId);
   const checklistState = buildClaimChecklist({
     ...(patient?.claimChecklist ?? buildClaimChecklist({})),
     hasAuthentication,
