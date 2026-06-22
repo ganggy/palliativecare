@@ -2536,9 +2536,6 @@ export async function saveVisit(
     }>
   )[0];
   if (!patient) throw new Error("Patient not found");
-  if (!isVisitDateAtLeastDaysAfter(patient.lastVisitAt ?? undefined, input.visitDate)) {
-    throw new Error("วันเยี่ยมต้องห่างจากครั้งก่อนอย่างน้อย 30 วัน");
-  }
 
   const normalizedChecklist = normalizeVisitChecklist(input.checklist, {
     hasPhoto: input.photos.length > 0,
